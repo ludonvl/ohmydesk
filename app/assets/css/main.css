@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens — direction « Miniature Studio »
+ * Pages publiques : fond lavande très clair. Éditeur : chrome sombre autour d'un canvas clair.
+ */
+@theme {
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  --color-ink: #16151f;
+  --color-paper: #f7f5fb;
+  --color-lilac: #eeebf6;
+  --color-line: #e4dfef;
+  --color-line-strong: #dcd6ea;
+  --color-subtle: #4b475e;
+  --color-muted: #5f5b72;
+  --color-link: #4a38d6;
+
+  --color-tangerine: #ff6b35;
+  --color-lavender: #a497ff;
+  --color-mint: #5ee6b5;
+  --color-sun: #ffcf5a;
+
+  --color-chrome: #121119;
+  --color-chrome-panel: #1b1a25;
+  --color-chrome-raised: #24222f;
+  --color-chrome-line: #2d2b3a;
+  --color-chrome-text: #eceaf5;
+  --color-chrome-muted: #a9a5bd;
+
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.75rem;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  body {
+    @apply bg-paper font-sans text-ink;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-tangerine);
+    outline-offset: 2px;
+  }
+}
+
+@utility canvas-dots {
+  background-color: var(--color-lilac);
+  background-image: radial-gradient(#d3cce6 1.2px, transparent 1.3px);
+  background-size: 22px 22px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

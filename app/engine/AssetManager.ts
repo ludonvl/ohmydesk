@@ -1,0 +1,113 @@
+import type { BufferGeometry, Material, WebGLRenderer } from 'three'
+import { BoxGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial } from 'three'
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
+import type { GLTF, GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
+import type { CatalogItem, ProceduralPart } from '#shared/catalog/types'
+
+const DRACO_DECODER_PATH = 'https://www.gstatic.com/draco/versioned/decoders/1.5.7/'
+const BASIS_TRANSCODER_PATH = 'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/libs/basis/'
+
+/**
+ * Construit les Object3D des objets du catalogue.
+ * - Modèles procéduraux : géométries mises en cache et partagées entre instances.
+ * - Modèles GLB/GLTF : chargés une fois (Draco, Meshopt, KTX2), puis clonés.
+ * Chaque mesh reçoit `userData.slot` ; les matériaux sont propres à chaque instance pour pouvoir être recolorés.
+ */
+export class AssetManager {
+  private geometries = new Map<string, BufferGeometry>()
+  private gltfCache = new Map<string, Promise<GLTF>>()
+  private loader: Promise<GLTFLoader> | null = null
+
+  constructor(private renderer: WebGLRenderer) {}
+
+  async instantiate(item: CatalogItem): Promise<Group> {
+    if (item.model.type === 'procedural') return this.buildProcedural(item, item.model.parts)
+    const gltf = await this.loadGltf(item.model.url)
+    const root = new Group()
+    const model = gltf.scene.clone(true)
+    const slotMaterials = item.model.slotMaterials
+    model.traverse((obj) => {
+      const mesh = obj as Mesh
+      if (!mesh.isMesh) return
+      mesh.castShadow = true
+      mesh.receiveShadow = true
+      const source = mesh.material as Material
+      const material = source.clone()
+      mesh.material = material
+      const name = source.name
+      const slot = slotMaterials
+        ? Object.entries(slotMaterials).find(([, names]) => names.includes(name))?.[0]
+        : item.materials.find((m) => m.slot === name)?.slot
+      if (slot) mesh.userData.slot = slot
+    })
+    root.add(model)
+    return root
+  }
+
+  private buildProcedural(item: CatalogItem, parts: ProceduralPart[]): Group {
+    const group = new Group()
+    parts.forEach((part, index) => {
+      const geometry = this.getGeometry(`${item.id}:${index}`, part)
+      const mesh = new Mesh(geometry, new MeshStandardMaterial({ roughness: 0.55, metalness: 0 }))
+      mesh.position.set(...part.position)
+      if (part.rotation) mesh.rotation.set(...part.rotation)
+      mesh.userData.slot = part.slot
+      mesh.castShadow = Math.min(...part.size) > 0.006
+      mesh.receiveShadow = true
+      group.add(mesh)
+    })
+    return group
+  }
+
+  private getGeometry(key: string, part: ProceduralPart): BufferGeometry {
+    let geometry = this.geometries.get(key)
+    if (geometry) return geometry
+    const [w, h, d] = part.size
+    if (part.shape === 'cylinder') {
+      geometry = new CylinderGeometry(w / 2, w / 2, h, 32)
+    } else if (part.radius && part.radius > 0) {
+      const radius = Math.min(part.radius, Math.min(w, h, d) / 2 - 1e-4)
+      geometry = radius > 0 ? new RoundedBoxGeometry(w, h, d, 3, radius) : new BoxGeometry(w, h, d)
+    } else {
+      geometry = new BoxGeometry(w, h, d)
+    }
+    this.geometries.set(key, geometry)
+    return geometry
+  }
+
+  private loadGltf(url: string): Promise<GLTF> {
+    let promise = this.gltfCache.get(url)
+    if (!promise) {
+      promise = this.getLoader().then((loader) => loader.loadAsync(url))
+      this.gltfCache.set(url, promise)
+    }
+    return promise
+  }
+
+  private getLoader(): Promise<GLTFLoader> {
+    if (!this.loader) {
+      this.loader = (async () => {
+        const [{ GLTFLoader }, { DRACOLoader }, { KTX2Loader }, { MeshoptDecoder }] = await Promise.all([
+          import('three/addons/loaders/GLTFLoader.js'),
+          import('three/addons/loaders/DRACOLoader.js'),
+          import('three/addons/loaders/KTX2Loader.js'),
+          import('three/addons/libs/meshopt_decoder.module.js'),
+        ])
+        const loader = new GLTFLoader()
+        const draco = new DRACOLoader().setDecoderPath(DRACO_DECODER_PATH)
+        const ktx2 = new KTX2Loader().setTranscoderPath(BASIS_TRANSCODER_PATH).detectSupport(this.renderer)
+        loader.setDRACOLoader(draco)
+        loader.setKTX2Loader(ktx2)
+        loader.setMeshoptDecoder(MeshoptDecoder)
+        return loader
+      })()
+    }
+    return this.loader
+  }
+
+  dispose() {
+    this.geometries.forEach((g) => g.dispose())
+    this.geometries.clear()
+    this.gltfCache.clear()
+  }
+}
