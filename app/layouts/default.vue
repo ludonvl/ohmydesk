@@ -36,6 +36,11 @@ const { data: session } = await authClient.useSession(useFetch)
           <AppLogo :size="20" />Oh My Desk
         </span>
         <span class="text-muted">Fait pour celles et ceux qui soignent leur setup.</span>
+        <div class="flex-1" />
+        <nav aria-label="Informations légales" class="flex flex-wrap gap-5">
+          <NuxtLink to="/confidentialite" class="text-subtle hover:text-ink">Confidentialité</NuxtLink>
+          <NuxtLink to="/conditions-utilisation" class="text-subtle hover:text-ink">Conditions d’utilisation</NuxtLink>
+        </nav>
       </div>
     </footer>
   </div>

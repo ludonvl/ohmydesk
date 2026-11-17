@@ -32,13 +32,22 @@ Better Auth, email + mot de passe avec **confirmation obligatoire de l'email** (
 Anti-abus : limitation de débit stockée en base (`rate_limit`), active en production : 5 inscriptions par heure et par IP, 5 connexions par minute, 3 renvois d'email par 5 minutes.
 Sans `RESEND_API_KEY`, en local, le lien de confirmation est affiché dans le terminal de `npm run dev`.
 
-Google est prêt : renseigner `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` et `NUXT_PUBLIC_GOOGLE_AUTH=true`
-(URI de redirection à déclarer chez Google : `<BETTER_AUTH_URL>/api/auth/callback/google`).
+Paramètres (`/settings`) :
+- **Changement d'email** en deux étapes : approbation depuis l'adresse actuelle, puis confirmation de la nouvelle adresse.
+- **Changement de mot de passe** (avec option « déconnecter mes autres appareils »), suivi d'un email de notification.
+- **Mot de passe oublié** (`/forgot-password` → email → `/reset-password`), avec email de confirmation et déconnexion de tous les appareils.
+
+**Connexion Google** : le bouton « Continuer avec Google » apparaît dès que `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET` sont renseignés.
+Un compte email existant avec la même adresse est associé automatiquement. Depuis `/settings`, on peut associer Google à un compte existant,
+et un compte créé avec Google peut se créer un mot de passe (lien par email).
+URI de redirection à déclarer dans Google Cloud : `http://localhost:3000/api/auth/callback/google` et `https://oh-my-desk.ludovicnouvel.com/api/auth/callback/google`.
 `/editor/**` et `/dashboard` exigent une session ; l'API des setups vérifie que l'utilisateur en est propriétaire.
 
 - `/` : page d'accueil
 - `/signup`, `/login` : compte
 - `/dashboard` : mes setups
+- `/confidentialite`, `/conditions-utilisation` : pages légales (informations éditeur à compléter dans `app/lib/legal.ts`)
+- `/settings` : email et mot de passe · `/forgot-password`, `/reset-password`
 - `/editor/new` : crée un setup puis ouvre l'éditeur (`?template=studio|neon|scandi`, `?from=<slug>` pour remixer)
 - `/editor/:id` : éditeur
 - `/setup/:slug` : viewer public (deux setups de démo : `bureau-du-dimanche`, `station-de-nuit`)

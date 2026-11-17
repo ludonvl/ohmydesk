@@ -17,7 +17,9 @@ const email = ref('')
 const password = ref('')
 const touched = reactive({ name: false, email: false, password: false })
 const submitting = ref(false)
-const formError = ref('')
+const googleLoading = ref(false)
+/** Erreur au retour de Google (?error=…) ou du formulaire. */
+const formError = ref(typeof route.query.error === 'string' ? authErrorMessage({ code: route.query.error }) : '')
 /** Inscription réussie : en attente du clic sur le lien reçu par email. */
 const emailSent = ref(false)
 /** Connexion refusée car l'email n'est pas confirmé. */
@@ -64,7 +66,21 @@ async function submit() {
 }
 
 async function signInWithGoogle() {
-  await authClient.signIn.social({ provider: 'google', callbackURL: redirect.value })
+  formError.value = ''
+  googleLoading.value = true
+  // En cas d'échec, Google renvoie ici avec ?error=… en conservant la destination.
+  const errorCallbackURL = `/${props.mode}?redirect=${encodeURIComponent(redirect.value)}`
+  const { error } = await authClient.signIn.social({
+    provider: 'google',
+    callbackURL: redirect.value,
+    newUserCallbackURL: redirect.value,
+    errorCallbackURL,
+  })
+  // Sans erreur, le navigateur part chez Google : on laisse le bouton en chargement.
+  if (error) {
+    googleLoading.value = false
+    formError.value = authErrorMessage(error)
+  }
 }
 
 const inputClass =
@@ -99,8 +115,9 @@ const inputClass =
     </div>
 
     <template v-if="config.public.googleAuth">
-      <Button variant="outline" size="lg" class="w-full" @click="signInWithGoogle">
-        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.6 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h6a5.1 5.1 0 0 1-2.2 3.3v2.8h3.6c2.1-1.9 3.2-4.8 3.2-8.1z" /><path fill="#34A853" d="M12 23c3 0 5.5-1 7.4-2.7l-3.6-2.8c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2v2.9A11 11 0 0 0 12 23z" /><path fill="#FBBC05" d="M5.7 14c-.2-.7-.4-1.3-.4-2s.1-1.4.4-2V7.1H2a11 11 0 0 0 0 9.8L5.7 14z" /><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.2 1.7l3.2-3.2A11 11 0 0 0 2 7.1L5.7 10c.9-2.7 3.4-4.6 6.3-4.6z" /></svg>
+      <Button variant="outline" size="lg" class="w-full" :disabled="googleLoading" :aria-busy="googleLoading" @click="signInWithGoogle">
+        <LoaderCircle v-if="googleLoading" class="size-4 animate-spin" aria-hidden="true" />
+        <GoogleIcon v-else />
         Continuer avec Google
       </Button>
       <div class="flex items-center gap-3 text-xs text-muted" aria-hidden="true">
@@ -140,7 +157,16 @@ const inputClass =
       </div>
 
       <div class="flex flex-col gap-1.5">
-        <label for="auth-password" class="text-sm font-semibold">Mot de passe</label>
+        <div class="flex items-baseline justify-between gap-3">
+          <label for="auth-password" class="text-sm font-semibold">Mot de passe</label>
+          <NuxtLink
+            v-if="mode === 'login'"
+            :to="{ path: '/forgot-password', query: email.trim() ? { email: email.trim() } : {} }"
+            class="text-[13px] font-semibold text-link"
+          >
+            Mot de passe oublié ?
+          </NuxtLink>
+        </div>
         <input
           id="auth-password"
           v-model="password"
@@ -162,6 +188,12 @@ const inputClass =
         {{ mode === 'signup' ? 'Créer mon compte' : 'Se connecter' }}
       </Button>
     </form>
+
+    <p v-if="mode === 'signup'" class="text-center text-[13px] leading-relaxed text-muted">
+      En créant un compte, tu acceptes les
+      <NuxtLink to="/conditions-utilisation" target="_blank" class="font-semibold text-link">conditions d’utilisation</NuxtLink>
+      et la <NuxtLink to="/confidentialite" target="_blank" class="font-semibold text-link">politique de confidentialité</NuxtLink>.
+    </p>
 
     <p class="text-center text-sm text-subtle">
       <template v-if="mode === 'signup'">

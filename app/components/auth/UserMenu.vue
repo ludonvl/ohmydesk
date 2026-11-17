@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LayoutGrid, LogOut } from 'lucide-vue-next'
+import { LayoutGrid, LogOut, Settings } from 'lucide-vue-next'
 import { authClient } from '~/lib/auth-client'
 
 const props = withDefaults(defineProps<{ name: string; email: string; image?: string | null; dark?: boolean }>(), { image: null, dark: false })
@@ -37,7 +37,7 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
       :aria-label="`Compte de ${name}`"
       @click="open = !open"
     >
-      <img v-if="image" :src="image" alt="" class="size-full object-cover">
+      <img v-if="image" :src="image" alt="" referrerpolicy="no-referrer" class="size-full object-cover">
       <span v-else aria-hidden="true">{{ initials }}</span>
     </button>
     <div
@@ -58,6 +58,15 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
         @click="open = false"
       >
         <LayoutGrid class="size-4" aria-hidden="true" />Mes setups
+      </NuxtLink>
+      <NuxtLink
+        to="/settings"
+        role="menuitem"
+        class="flex h-10 items-center gap-2.5 rounded-xl px-3 text-sm font-medium"
+        :class="dark ? 'hover:bg-chrome-raised' : 'hover:bg-lilac'"
+        @click="open = false"
+      >
+        <Settings class="size-4" aria-hidden="true" />Paramètres
       </NuxtLink>
       <button
         role="menuitem"

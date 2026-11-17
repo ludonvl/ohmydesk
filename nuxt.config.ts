@@ -24,6 +24,9 @@ export default defineNuxtConfig({
         { name: 'description', content: 'Crée, personnalise et partage ton setup de bureau en 3D isométrique.' },
       ],
       link: [
+        { rel: 'icon', href: '/favicon.ico', sizes: '48x48' },
+        { rel: 'icon', href: '/favicon.svg', type: 'image/svg+xml' },
+        { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' },
         {
@@ -40,8 +43,8 @@ export default defineNuxtConfig({
       // Origines autorisées à piloter le viewer embarqué via postMessage (séparées par des virgules).
       // Surcharge : NUXT_PUBLIC_EMBED_ALLOWED_ORIGINS="https://monsite.fr,https://blog.monsite.fr"
       embedAllowedOrigins: '',
-      // Affiche le bouton « Continuer avec Google » (NUXT_PUBLIC_GOOGLE_AUTH=true + GOOGLE_CLIENT_ID/SECRET).
-      googleAuth: false,
+      // Bouton « Continuer avec Google » : affiché dès que les identifiants OAuth sont configurés.
+      googleAuth: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     },
   },
 
