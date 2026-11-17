@@ -1,133 +1,141 @@
-import type { RoomThemeId, SceneData, SetupSummary, SetupUpdate, SetupWithScene } from '#shared/types/scene'
-import { createDefaultScene } from '#shared/utils/defaultScene'
+import type { SQL } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
+import type { SceneData, SetupUpdate, SetupWithScene } from '#shared/types/scene'
 import { createId, slugify } from '#shared/utils/ids'
+import { schema, useDb } from '../db/client'
+
+const { setup, setupVersion, user } = schema
 
 /**
- * Dépôt provisoire des setups (étape 1) basé sur le stockage Nitro
- * (fichiers dans .data/ en dev, mémoire en prod).
- * L'interface est volontairement celle du futur dépôt Drizzle/Neon : seules ces fonctions changeront.
+ * Les sauvegardes automatiques rapprochées mettent à jour la même version ;
+ * une nouvelle SetupVersion est créée au-delà de cet intervalle (historique utile sans exploser la table).
  */
-interface SetupRecord extends SetupSummary {
-  userId: string | null
-  version: number
-  scene: SceneData
+const VERSION_WINDOW_MS = 10 * 60 * 1000
+
+export interface SetupRecord extends SetupWithScene {
+  userId: string
 }
 
-const storage = () => useStorage<SetupRecord | string>('setups')
+const iso = (d: Date | null) => (d ? d.toISOString() : null)
 
-const DEMO_SETUPS: { slug: string; name: string; description: string; theme: RoomThemeId; authorName: string }[] = [
-  {
-    slug: 'bureau-du-dimanche',
-    name: 'Bureau du dimanche',
-    description: 'Bois clair, vert sauge et une lampe qui ne s’éteint jamais. Un coin pour dessiner et coder au calme.',
-    theme: 'scandi',
-    authorName: 'Camille',
-  },
-  {
-    slug: 'station-de-nuit',
-    name: 'Station de nuit',
-    description: 'Néons roses, écran bleu et tour qui brille : le setup des longues sessions.',
-    theme: 'neon',
-    authorName: 'Nox',
-  },
-]
+async function findOne(where: SQL): Promise<SetupRecord | null> {
+  const rows = await useDb()
+    .select({ s: setup, authorName: user.name, scene: setupVersion.sceneData, version: setupVersion.version })
+    .from(setup)
+    .innerJoin(user, eq(user.id, setup.userId))
+    .innerJoin(setupVersion, and(eq(setupVersion.setupId, setup.id), eq(setupVersion.version, setup.currentVersion)))
+    .where(where)
+    .limit(1)
+  const row = rows[0]
+  if (!row) return null
+  return toRecord(row.s, row.authorName, row.scene, row.version)
+}
 
-let seeding: Promise<void> | null = null
-async function ensureSeeded() {
-  if (!seeding) {
-    seeding = (async () => {
-      const s = storage()
-      if (await s.hasItem('meta:seeded')) return
-      const now = new Date().toISOString()
-      for (const demo of DEMO_SETUPS) {
-        const record: SetupRecord = {
-          id: createId('s_'),
-          userId: null,
-          name: demo.name,
-          slug: demo.slug,
-          description: demo.description,
-          isPublic: true,
-          authorName: demo.authorName,
-          publishedAt: now,
-          createdAt: now,
-          updatedAt: now,
-          version: 1,
-          scene: createDefaultScene(demo.theme),
-        }
-        await s.setItem(`setup:${record.id}`, record)
-        await s.setItem(`slug:${record.slug}`, record.id)
-      }
-      await s.setItem('meta:seeded', now)
-    })()
+function toRecord(s: typeof setup.$inferSelect, authorName: string, scene: SceneData, version: number): SetupRecord {
+  return {
+    id: s.id,
+    userId: s.userId,
+    name: s.name,
+    slug: s.slug,
+    description: s.description,
+    isPublic: s.isPublic,
+    authorName,
+    publishedAt: iso(s.publishedAt),
+    createdAt: s.createdAt.toISOString(),
+    updatedAt: s.updatedAt.toISOString(),
+    version,
+    scene,
   }
-  return seeding
 }
 
-function toPublic(record: SetupRecord): SetupWithScene {
+/** Retire les champs internes avant d'envoyer au client. */
+export function toPublic(record: SetupRecord): SetupWithScene {
   const { userId: _userId, ...rest } = record
   return rest
 }
 
-export async function getSetupById(id: string): Promise<SetupWithScene | null> {
-  await ensureSeeded()
-  const record = (await storage().getItem(`setup:${id}`)) as SetupRecord | null
-  return record ? toPublic(record) : null
+export function getSetupById(id: string) {
+  return findOne(eq(setup.id, id))
 }
 
-export async function getSetupBySlug(slug: string): Promise<SetupWithScene | null> {
-  await ensureSeeded()
-  const id = (await storage().getItem(`slug:${slug}`)) as string | null
-  return id ? getSetupById(id) : null
+export function getSetupBySlug(slug: string) {
+  return findOne(eq(setup.slug, slug))
+}
+
+export async function listSetupsByUser(userId: string): Promise<SetupWithScene[]> {
+  const rows = await useDb()
+    .select({ s: setup, authorName: user.name, scene: setupVersion.sceneData, version: setupVersion.version })
+    .from(setup)
+    .innerJoin(user, eq(user.id, setup.userId))
+    .innerJoin(setupVersion, and(eq(setupVersion.setupId, setup.id), eq(setupVersion.version, setup.currentVersion)))
+    .where(eq(setup.userId, userId))
+    .orderBy(desc(setup.updatedAt))
+  return rows.map((r) => toPublic(toRecord(r.s, r.authorName, r.scene, r.version)))
 }
 
 async function uniqueSlug(name: string): Promise<string> {
   const base = slugify(name)
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 10; i++) {
     const candidate = i === 0 ? base : `${base}-${createId().slice(0, 5)}`
-    if (!(await storage().hasItem(`slug:${candidate}`))) return candidate
+    const taken = await useDb().select({ id: setup.id }).from(setup).where(eq(setup.slug, candidate)).limit(1)
+    if (!taken.length) return candidate
   }
   return `${base}-${createId()}`
 }
 
-export async function createSetup(input: { name?: string; scene: SceneData; authorName?: string }): Promise<SetupWithScene> {
-  await ensureSeeded()
-  const now = new Date().toISOString()
-  const name = input.name ?? 'Mon setup'
-  const record: SetupRecord = {
-    id: createId('s_'),
-    userId: null,
-    name,
-    slug: await uniqueSlug(name),
-    description: '',
-    isPublic: false,
-    authorName: input.authorName ?? 'Anonyme',
-    publishedAt: null,
-    createdAt: now,
-    updatedAt: now,
-    version: 1,
-    scene: input.scene,
-  }
-  await storage().setItem(`setup:${record.id}`, record)
-  await storage().setItem(`slug:${record.slug}`, record.id)
-  return toPublic(record)
+export async function createSetup(input: { userId: string; name?: string; scene: SceneData }): Promise<SetupRecord> {
+  const db = useDb()
+  const id = createId('s_')
+  const name = input.name?.trim() || 'Mon setup'
+  await db.batch([
+    db.insert(setup).values({ id, userId: input.userId, name, slug: await uniqueSlug(name), currentVersion: 1 }),
+    db.insert(setupVersion).values({ id: createId('v_'), setupId: id, version: 1, sceneData: input.scene }),
+  ])
+  const created = await getSetupById(id)
+  if (!created) throw createError({ statusCode: 500, statusMessage: 'Création du setup impossible' })
+  return created
 }
 
-export async function updateSetup(id: string, patch: SetupUpdate): Promise<SetupWithScene | null> {
-  const s = storage()
-  const record = (await s.getItem(`setup:${id}`)) as SetupRecord | null
-  if (!record) return null
-  const now = new Date().toISOString()
-  if (patch.name !== undefined) record.name = patch.name
-  if (patch.description !== undefined) record.description = patch.description
+export async function updateSetup(current: SetupRecord, patch: SetupUpdate): Promise<SetupRecord> {
+  const db = useDb()
+  const now = new Date()
+  const changes: Partial<typeof setup.$inferInsert> = { updatedAt: now }
+
+  if (patch.name !== undefined) changes.name = patch.name
+  if (patch.description !== undefined) changes.description = patch.description
   if (patch.isPublic !== undefined) {
-    if (patch.isPublic && !record.isPublic) record.publishedAt = now
-    record.isPublic = patch.isPublic
+    changes.isPublic = patch.isPublic
+    if (patch.isPublic && !current.isPublic) changes.publishedAt = now
   }
+
   if (patch.scene) {
-    record.scene = patch.scene
-    record.version += 1
+    const [latest] = await db
+      .select({ id: setupVersion.id, createdAt: setupVersion.createdAt })
+      .from(setupVersion)
+      .where(and(eq(setupVersion.setupId, current.id), eq(setupVersion.version, current.version)))
+      .limit(1)
+    if (latest && now.getTime() - latest.createdAt.getTime() < VERSION_WINDOW_MS) {
+      await db.update(setupVersion).set({ sceneData: patch.scene }).where(eq(setupVersion.id, latest.id))
+    } else {
+      const next = current.version + 1
+      await db.insert(setupVersion).values({ id: createId('v_'), setupId: current.id, version: next, sceneData: patch.scene })
+      changes.currentVersion = next
+    }
   }
-  record.updatedAt = now
-  await s.setItem(`setup:${id}`, record)
-  return toPublic(record)
+
+  await db.update(setup).set(changes).where(eq(setup.id, current.id))
+  const updated = await getSetupById(current.id)
+  if (!updated) throw createError({ statusCode: 404, statusMessage: 'Setup introuvable' })
+  return updated
+}
+
+export async function deleteSetup(id: string) {
+  await useDb().delete(setup).where(eq(setup.id, id))
+}
+
+/** Setup appartenant à l'utilisateur, sinon 404 (on ne révèle pas l'existence d'un setup d'autrui). */
+export async function requireOwnedSetup(id: string | undefined, userId: string): Promise<SetupRecord> {
+  const record = id ? await getSetupById(id) : null
+  if (!record || record.userId !== userId) throw createError({ statusCode: 404, statusMessage: 'Setup introuvable' })
+  return record
 }

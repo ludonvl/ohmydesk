@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { Check, Code, Eye, EyeOff, Globe, Link, Lock, Redo2, Share2, Undo2 } from 'lucide-vue-next'
 import { Button } from '~/components/ui/button'
+import { authClient } from '~/lib/auth-client'
 import { useEditorStore } from '~/stores/editor'
 
 defineProps<{ preview: boolean }>()
 const emit = defineEmits<{ togglePreview: [] }>()
 
 const editor = useEditorStore()
+const session = authClient.useSession()
 const config = useRuntimeConfig()
 const shareOpen = ref(false)
 const copied = ref<'link' | 'embed' | null>(null)
@@ -132,5 +134,13 @@ async function copy(text: string, kind: 'link' | 'embed') {
         <Button v-else variant="accent" @click="publish(true)">Publier ce setup</Button>
       </div>
     </div>
+
+    <UserMenu
+      v-if="session.data?.user"
+      :name="session.data.user.name"
+      :email="session.data.user.email"
+      :image="session.data.user.image"
+      dark
+    />
   </header>
 </template>

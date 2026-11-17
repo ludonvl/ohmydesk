@@ -5,7 +5,7 @@ import type { EngineOptions } from '~/engine'
 import { CATALOG_DRAG_TYPE } from '~/lib/dnd'
 import { useEditorStore } from '~/stores/editor'
 
-definePageMeta({ layout: false })
+definePageMeta({ layout: false, middleware: 'auth' })
 
 interface CanvasApi {
   rotateCamera: (deg: number) => void

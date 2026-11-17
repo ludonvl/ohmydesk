@@ -6,7 +6,7 @@ import type { SetupWithScene } from '#shared/types/scene'
  * Crée un setup puis redirige vers l'éditeur.
  * ?template=studio|neon|scandi · ?from=<slug> pour remixer un setup public.
  */
-definePageMeta({ layout: false })
+definePageMeta({ layout: false, middleware: 'auth' })
 
 const route = useRoute()
 const failed = ref(false)

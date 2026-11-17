@@ -1,9 +1,7 @@
-import { getSetupById } from '../../utils/setups'
+import { requireUser } from '../../utils/auth'
+import { requireOwnedSetup, toPublic } from '../../utils/setups'
 
-// TODO étape 2 : réservé au propriétaire (Better Auth).
 export default defineEventHandler(async (event) => {
-  const id = getRouterParam(event, 'id')
-  const setup = id ? await getSetupById(id) : null
-  if (!setup) throw createError({ statusCode: 404, statusMessage: 'Setup introuvable' })
-  return setup
+  const user = await requireUser(event)
+  return toPublic(await requireOwnedSetup(getRouterParam(event, 'id'), user.id))
 })

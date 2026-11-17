@@ -5,12 +5,40 @@ Crée, personnalise et partage ton setup de bureau sous forme de scène 3D isom�
 ## Démarrer
 
 ```bash
-npm install        # ou pnpm install
-cp .env.example .env
-npm run dev        # http://localhost:3000
+npm install
+cp .env.example .env     # puis renseigner DATABASE_URL et BETTER_AUTH_SECRET (npm run auth:secret)
+npm run db:generate      # génère la migration SQL à partir de server/db/schema.ts
+npm run db:migrate       # applique les migrations sur Neon
+npm run db:seed          # catalogue + setups de démonstration
+npm run dev              # http://localhost:3000
 ```
 
+### Base de données
+
+| Script | Rôle |
+|---|---|
+| `db:generate` | Crée un fichier de migration dans `server/db/migrations` après une modification du schéma |
+| `db:migrate` | Applique les migrations en attente |
+| `db:push` | Synchronise directement le schéma (prototypage, sans migration) |
+| `db:studio` | Explorateur de données Drizzle |
+| `db:seed` | Catalogue et setups de démo (idempotent) |
+
+Tables : `user`, `session`, `account`, `verification` (Better Auth), `setup`, `setup_version` (scène en JSONB), `catalog_category`, `catalog_item`.
+Les sauvegardes automatiques rapprochées (moins de 10 min) mettent à jour la même `setup_version` ; au-delà, une nouvelle version est créée.
+
+### Authentification
+
+Better Auth, email + mot de passe avec **confirmation obligatoire de l'email** (lien envoyé via Resend, valable 1 h, connexion automatique après clic).
+Anti-abus : limitation de débit stockée en base (`rate_limit`), active en production : 5 inscriptions par heure et par IP, 5 connexions par minute, 3 renvois d'email par 5 minutes.
+Sans `RESEND_API_KEY`, en local, le lien de confirmation est affiché dans le terminal de `npm run dev`.
+
+Google est prêt : renseigner `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` et `NUXT_PUBLIC_GOOGLE_AUTH=true`
+(URI de redirection à déclarer chez Google : `<BETTER_AUTH_URL>/api/auth/callback/google`).
+`/editor/**` et `/dashboard` exigent une session ; l'API des setups vérifie que l'utilisateur en est propriétaire.
+
 - `/` : page d'accueil
+- `/signup`, `/login` : compte
+- `/dashboard` : mes setups
 - `/editor/new` : crée un setup puis ouvre l'éditeur (`?template=studio|neon|scandi`, `?from=<slug>` pour remixer)
 - `/editor/:id` : éditeur
 - `/setup/:slug` : viewer public (deux setups de démo : `bureau-du-dimanche`, `station-de-nuit`)
@@ -74,8 +102,12 @@ server/              API Nitro
 ## Feuille de route
 
 - [x] Étape 1 : fondations Nuxt 4, moteur 3D, éditeur, viewer public, viewer embarqué, catalogue procédural
-- [ ] Étape 2 : Neon + Drizzle (User, Setup, SetupVersion, CatalogItem, CatalogCategory), Better Auth (email/mot de passe, OAuth Google prêt), routes protégées
+- [x] Étape 2 : Neon + Drizzle (User, Setup, SetupVersion, CatalogItem, CatalogCategory), Better Auth (email/mot de passe, OAuth Google prêt), routes protégées
 - [ ] Étape 3 : Vercel Blob (GLB, textures, aperçus PNG via `engine.screenshot()`), premiers modèles GLB
 - [ ] Étape 4 : galerie publique, profils, likes
 
-> Étape 1 : les setups sont stockés via le stockage Nitro (`.data/setups` en dev, mémoire en prod). Aucune authentification : toute personne connaissant l'identifiant d'un setup peut le modifier.
+## Déploiement Vercel
+
+Variables à définir dans le projet : `DATABASE_URL` (ajoutée automatiquement par l'intégration Neon), `BETTER_AUTH_SECRET`,
+`BETTER_AUTH_URL` (production uniquement : les prévisualisations utilisent `VERCEL_URL`), `NUXT_PUBLIC_SITE_URL`.
+Les migrations ne sont pas lancées au build : `npm run db:migrate` avec la `DATABASE_URL` de production avant de déployer un changement de schéma.

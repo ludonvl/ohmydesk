@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { Button } from '~/components/ui/button'
+import { authClient } from '~/lib/auth-client'
+
+const { data: session } = await authClient.useSession(useFetch)
 </script>
 
 <template>
@@ -15,9 +18,16 @@ import { Button } from '~/components/ui/button'
         <NuxtLink to="/#integrer" class="text-subtle hover:text-ink">Intégrer</NuxtLink>
       </nav>
       <div class="flex-1" />
-      <Button as-child>
-        <NuxtLink to="/editor/new">Créer mon setup</NuxtLink>
-      </Button>
+      <template v-if="session?.user">
+        <NuxtLink to="/dashboard" class="text-[15px] font-medium text-ink hover:text-link">Mes setups</NuxtLink>
+        <UserMenu :name="session.user.name" :email="session.user.email" :image="session.user.image" />
+      </template>
+      <template v-else>
+        <NuxtLink to="/login" class="text-[15px] font-medium text-ink hover:text-link">Se connecter</NuxtLink>
+        <Button as-child>
+          <NuxtLink to="/signup">Créer mon setup</NuxtLink>
+        </Button>
+      </template>
     </header>
     <slot />
     <footer class="border-t border-line">

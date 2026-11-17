@@ -40,6 +40,8 @@ export default defineNuxtConfig({
       // Origines autorisées à piloter le viewer embarqué via postMessage (séparées par des virgules).
       // Surcharge : NUXT_PUBLIC_EMBED_ALLOWED_ORIGINS="https://monsite.fr,https://blog.monsite.fr"
       embedAllowedOrigins: '',
+      // Affiche le bouton « Continuer avec Google » (NUXT_PUBLIC_GOOGLE_AUTH=true + GOOGLE_CLIENT_ID/SECRET).
+      googleAuth: false,
     },
   },
 
@@ -48,22 +50,13 @@ export default defineNuxtConfig({
     '/embed/**': {
       headers: { 'Content-Security-Policy': 'frame-ancestors *' },
     },
+    '/dashboard': { ssr: true, headers: { 'Cache-Control': 'private, no-store' } },
     '/editor/**': {
       ssr: false,
       headers: { 'Content-Security-Policy': "frame-ancestors 'self'", 'X-Frame-Options': 'SAMEORIGIN' },
     },
     '/setup/**': {
       headers: { 'Content-Security-Policy': "frame-ancestors 'self'", 'X-Frame-Options': 'SAMEORIGIN' },
-    },
-  },
-
-  nitro: {
-    // Stockage provisoire des setups (étape 1). Remplacé par Neon + Drizzle à l'étape 2.
-    storage: {
-      setups: { driver: 'memory' },
-    },
-    devStorage: {
-      setups: { driver: 'fs', base: './.data/setups' },
     },
   },
 
