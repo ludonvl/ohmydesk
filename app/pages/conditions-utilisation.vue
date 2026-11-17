@@ -31,9 +31,13 @@ const toc = [
   >
     <h2 id="editeur">1. Éditeur et hébergement</h2>
     <p>
-      Le site <strong>{{ LEGAL.siteUrl }}</strong> est édité par <strong>{{ LEGAL.publisher.name }}</strong> ({{ LEGAL.publisher.status }}),
-      {{ LEGAL.publisher.address }}. Contact : <strong>{{ LEGAL.publisher.email }}</strong>.
+      Le site <strong>{{ LEGAL.siteUrl }}</strong> est édité par <strong>{{ LEGAL.publisher.name }}</strong> ({{ LEGAL.publisher.status }}){{ LEGAL.publisher.address ? `, ${LEGAL.publisher.address}` : '' }}.
+      Contact : <strong>{{ LEGAL.publisher.email }}</strong>.
       Directeur de la publication : {{ LEGAL.publisher.director }}.
+    </p>
+    <p v-if="!LEGAL.publisher.address">
+      Conformément à l’article 6, III, 2 de la loi n° 2004-575 du 21 juin 2004 pour la confiance dans l’économie numérique, l’éditeur, personne physique
+      agissant à titre non professionnel, ne publie pas son adresse personnelle ; ses éléments d’identification ont été communiqués à l’hébergeur.
     </p>
     <p>
       Hébergement : <strong>{{ LEGAL.host.name }}</strong>, {{ LEGAL.host.address }}

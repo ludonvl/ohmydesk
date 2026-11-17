@@ -1,6 +1,6 @@
 /**
  * Informations légales affichées sur /confidentialite et /conditions-utilisation.
- * ⚠ À compléter avant la mise en production : remplace chaque valeur entre crochets.
+ * À mettre à jour si le cadre change (activité professionnelle, nouvelle adresse de contact…).
  */
 export const LEGAL = {
   /** Date affichée en tête des deux pages ; à mettre à jour à chaque modification du contenu. */
@@ -9,13 +9,17 @@ export const LEGAL = {
   siteUrl: 'https://oh-my-desk.ludovicnouvel.com',
   publisher: {
     /** Particulier : prénom et nom. Entreprise : raison sociale. */
-    name: '[Prénom Nom ou raison sociale]',
+    name: 'Ludovic Nouvel',
     /** Ex. « Particulier » ou « Entreprise individuelle, SIREN 123 456 789 ». */
-    status: '[Statut : particulier, ou forme juridique et SIREN]',
-    address: '[Adresse postale]',
+    status: 'particulier, site personnel non professionnel',
+    /**
+     * Vide pour un particulier agissant à titre non professionnel (LCEN, art. 6, III, 2) :
+     * l'adresse n'est pas publiée, l'hébergeur dispose des éléments d'identification.
+     */
+    address: '',
     /** Adresse de contact pour les questions et les demandes liées aux données personnelles. */
-    email: '[Adresse email de contact]',
-    director: '[Nom du directeur de la publication]',
+    email: 'ohmydesk@ludovicnouvel.com',
+    director: 'Ludovic Nouvel',
   },
   host: {
     name: 'Vercel Inc.',

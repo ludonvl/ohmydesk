@@ -27,7 +27,7 @@ const toc = [
   >
     <h2 id="responsable">1. Qui est responsable de tes données</h2>
     <p>
-      Le responsable du traitement est <strong>{{ LEGAL.publisher.name }}</strong> ({{ LEGAL.publisher.status }}), {{ LEGAL.publisher.address }}.
+      Le responsable du traitement est <strong>{{ LEGAL.publisher.name }}</strong> ({{ LEGAL.publisher.status }}){{ LEGAL.publisher.address ? `, ${LEGAL.publisher.address}` : '' }}.
     </p>
     <p>
       Pour toute question sur tes données ou pour exercer tes droits, écris à <strong>{{ LEGAL.publisher.email }}</strong>.
