@@ -40,7 +40,7 @@ Paramètres (`/settings`) :
 **Connexion Google** : le bouton « Continuer avec Google » apparaît dès que `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET` sont renseignés.
 Un compte email existant avec la même adresse est associé automatiquement. Depuis `/settings`, on peut associer Google à un compte existant,
 et un compte créé avec Google peut se créer un mot de passe (lien par email).
-URI de redirection à déclarer dans Google Cloud : `http://localhost:3000/api/auth/callback/google` et `https://oh-my-desk.ludovicnouvel.com/api/auth/callback/google`.
+URI de redirection à déclarer dans Google Cloud : `http://localhost:3000/api/auth/callback/google` et `https://ohmydesk.ludovicnouvel.com/api/auth/callback/google`.
 `/editor/**` et `/dashboard` exigent une session ; l'API des setups vérifie que l'utilisateur en est propriétaire.
 
 - `/` : page d'accueil
