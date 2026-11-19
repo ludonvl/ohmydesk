@@ -1,6 +1,7 @@
 import { headphoneFamily, headphoneItems, speakerFamily, speakerItems } from './families/audio'
 import { chairFamily, chairItems } from './families/chairs'
 import { desktopFamily, desktopItems, laptopFamily, laptopItems } from './families/computers'
+import { deskObjectFamily, deskObjectItems, figurineFamily, figurineItems, rugFamily, rugItems, wallDecorFamily, wallDecorItems } from './families/decor'
 import { deskFamily, deskItems } from './families/desks'
 import { lampFamily, lampItems } from './families/lamps'
 import { neonFamily, neonItems } from './families/neons'
@@ -62,26 +63,9 @@ export const catalogItems: CatalogItem[] = [
   ...lampItems,
   ...neonItems,
   ...plantItems,
-  {
-    id: 'mug',
-    slug: 'tasse',
-    name: 'Tasse',
-    category: 'decor',
-    description: 'Tasse en grès.',
-    dimensions: { width: 0.11, height: 0.1, depth: 0.085 },
-    defaultScale: 1,
-    placement: 'surface',
-    materials: [{ slot: 'body', label: 'Tasse', default: '#4CC9A0', customizable: true }],
-    glb: { path: 'models/mug-v1.glb' },
-    model: {
-      type: 'procedural',
-      parts: [
-        cyl([0.085, 0.1, 0.085], [0, 0.05, 0], 'body'),
-        box([0.02, 0.06, 0.015], [0.052, 0.05, 0], 'body', 0.005),
-      ],
-    },
-    tags: ['tasse', 'café', 'mug'],
-  },
+  ...deskObjectItems,
+  ...figurineItems,
+  ...wallDecorItems,
   ...speakerItems,
   ...headphoneItems,
   {
@@ -116,42 +100,7 @@ export const catalogItems: CatalogItem[] = [
   ...furnitureItems,
   ...vitrineItems,
   ...posterItems,
-  {
-    id: 'rug',
-    slug: 'tapis',
-    name: 'Tapis',
-    category: 'decor',
-    description: 'Tapis 160 × 120 cm.',
-    dimensions: { width: 1.6, height: 0.012, depth: 1.2 },
-    defaultScale: 1,
-    placement: 'floor',
-    materials: [{ slot: 'main', label: 'Tapis', default: '#A497FF', customizable: true, roughness: 0.95 }],
-    model: { type: 'procedural', parts: [box([1.6, 0.012, 1.2], [0, 0.006, 0], 'main', 0.004)] },
-    tags: ['tapis', 'rug'],
-  },
-  {
-    id: 'mascot-cubi',
-    slug: 'mascotte-cubi',
-    name: 'Mascotte Cubi',
-    category: 'decor',
-    description: 'Petite figurine cubique, à poser partout.',
-    dimensions: { width: 0.08, height: 0.08, depth: 0.08 },
-    defaultScale: 1,
-    placement: 'surface',
-    materials: [
-      { slot: 'body', label: 'Corps', default: '#A497FF', customizable: true },
-      { slot: 'eyes', label: 'Yeux', default: '#16151F', customizable: true },
-    ],
-    model: {
-      type: 'procedural',
-      parts: [
-        box([0.08, 0.08, 0.08], [0, 0.04, 0], 'body', 0.015),
-        box([0.012, 0.016, 0.004], [-0.018, 0.05, 0.0405], 'eyes'),
-        box([0.012, 0.016, 0.004], [0.018, 0.05, 0.0405], 'eyes'),
-      ],
-    },
-    tags: ['figurine', 'mascotte', 'déco'],
-  },
+  ...rugItems,
 ]
 
 export const catalogById: ReadonlyMap<string, CatalogItem> = new Map(catalogItems.map((item) => [item.id, item]))
@@ -160,7 +109,7 @@ export function getCatalogItem(id: string): CatalogItem | undefined {
   return catalogById.get(id)
 }
 
-export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, keyboardFamily, mouseFamily, desktopFamily, laptopFamily, chairFamily, speakerFamily, headphoneFamily, cubeShelfFamily, furnitureFamily, vitrineFamily, lampFamily, plantFamily, neonFamily, posterFamily]
+export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, keyboardFamily, mouseFamily, desktopFamily, laptopFamily, chairFamily, speakerFamily, headphoneFamily, cubeShelfFamily, furnitureFamily, vitrineFamily, lampFamily, plantFamily, neonFamily, posterFamily, deskObjectFamily, figurineFamily, wallDecorFamily, rugFamily]
 const familyById: ReadonlyMap<string, CatalogFamily> = new Map(catalogFamilies.map((f) => [f.id, f]))
 
 export function getFamily(id: string | undefined): CatalogFamily | undefined {
