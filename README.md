@@ -61,6 +61,10 @@ nommés comme leur slot (`body`, `pot`…). Nouvelle version d'un modèle = nouv
   propre à la personne et reprise dans tous ses setups. Stockée dans `user.avatar_3d` (JSONB), enregistrée par
   `PUT /api/profile/avatar`. Pièces procédurales par articulation dans `shared/avatar/rig.ts`, animation dans
   `app/engine/avatar/` (respiration, regard, clignement, « coucou »), sans squelette ni GLB.
+  Dans le viewer et l'intégration, l'avatar de l'auteur se promène (`AvatarController` : grille de navigation
+  de 10 cm et A*), s'assoit sur les sièges (ancre `seat`), tape au clavier s'il est face à un bureau, regarde
+  plantes, déco et posters, et salue la caméra. Dans l'éditeur il reste sur place ; l'interrupteur
+  « Mon avatar » du panneau Pièce le masque pour ce setup (`scene.avatar.enabled`). Il n'apparaît pas dans les aperçus PNG.
 - **Likes** : `POST` / `DELETE /api/setups/:id/like` (setups publics, connexion requise, idempotent).
   `setup.like_count` est recalculé dans la même transaction et sert au tri « Populaires ».
 - **Cache** : galerie, profils et viewer renvoient la même réponse à tout le monde (cache CDN) ;
@@ -119,6 +123,7 @@ URI de redirection à déclarer dans Google Cloud : `http://localhost:3000/api/a
 | `zoom` | `false` | Zoom à la molette (désactivé pour ne pas bloquer le défilement de la page hôte) |
 | `angle` | celui du setup | Azimut initial en degrés |
 | `branding` | `true` | Lien « Voir sur Oh My Desk » |
+| `avatar` | `true` | Avatar de l'auteur dans la pièce |
 
 ```html
 <iframe src="https://app.example.com/embed/mon-setup?transparent=true&autorotate=true&controls=false"

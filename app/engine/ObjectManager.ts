@@ -56,6 +56,11 @@ export class ObjectManager {
     return this.instances.get(id)
   }
 
+  /** Objets chargés de la scène (navigation de l'avatar). */
+  loadedInstances(): Readonly<Instance>[] {
+    return [...this.instances.values()].filter((i) => i.loaded)
+  }
+
   getObject3D(id: string): Group | undefined {
     return this.instances.get(id)?.group
   }

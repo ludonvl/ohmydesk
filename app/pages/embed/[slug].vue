@@ -36,6 +36,8 @@ const params = {
   // Désactivé par défaut pour ne pas capturer le défilement de la page hôte.
   zoom: flag('zoom', false),
   branding: flag('branding', true),
+  // Avatar de l'auteur dans la pièce (désactivable par le site hôte).
+  avatar: flag('avatar', true),
   angle: num('angle'),
   speed: num('speed'),
 }
@@ -88,6 +90,7 @@ useHead({ title: () => (setup.value ? `${setup.value.name} · Oh My Desk` : 'Oh 
           :scene="scene"
           :selected-id="highlighted"
           :options="options"
+          :avatar="params.avatar ? setup.authorAvatar : null"
           :label="`Setup ${setup.name} en 3D`"
           @ready="send({ type: 'ready', slug })"
           @object-click="onObjectClick"

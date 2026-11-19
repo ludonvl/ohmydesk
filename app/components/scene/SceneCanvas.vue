@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { catalogById } from '#shared/catalog/items'
+import type { Avatar } from '#shared/avatar/schema'
 import type { SceneData } from '#shared/types/scene'
 import type { Engine, EngineOptions } from '~/engine'
 
@@ -13,8 +14,10 @@ const props = withDefaults(
     selectedId?: string | null
     options?: Partial<EngineOptions>
     label?: string
+    /** Avatar de l'auteur, affiché dans la pièce ; null = aucun. */
+    avatar?: Avatar | null
   }>(),
-  { selectedId: null, options: () => ({}), label: 'Scène 3D isométrique du setup' },
+  { selectedId: null, options: () => ({}), label: 'Scène 3D isométrique du setup', avatar: null },
 )
 
 const emit = defineEmits<{
@@ -43,6 +46,7 @@ onMounted(async () => {
     instance.events.on('transformend', (payload) => emit('transformEnd', payload))
     engine.value = instance
     await instance.load(clone(props.scene))
+    instance.setAvatar(props.avatar ? JSON.parse(JSON.stringify(props.avatar)) : null)
     // La scène a pu changer pendant le chargement : on rattrape (diff peu coûteux).
     await instance.sync(clone(props.scene))
     instance.select(props.selectedId ?? null)
@@ -59,6 +63,13 @@ watch(
   () => props.scene,
   (scene) => {
     if (engine.value && !loading.value) engine.value.sync(clone(scene))
+  },
+  { deep: true },
+)
+watch(
+  () => props.avatar,
+  (avatar) => {
+    if (engine.value && !loading.value) engine.value.setAvatar(avatar ? JSON.parse(JSON.stringify(avatar)) : null)
   },
   { deep: true },
 )

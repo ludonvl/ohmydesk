@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { Avatar } from '../avatar/schema'
 
 /**
  * Format de scène sauvegardé (JSONB dans SetupVersion.sceneData).
@@ -61,6 +62,8 @@ export const sceneDataSchema = z.object({
   room: roomSchema,
   camera: cameraStateSchema.default({ azimuth: 45, zoom: 1 }),
   objects: z.array(sceneObjectSchema).max(300),
+  /** Avatar de l'auteur dans ce setup (son apparence est dans son profil). Absent = affiché. */
+  avatar: z.object({ enabled: z.boolean().default(true) }).optional(),
 })
 export type SceneData = z.infer<typeof sceneDataSchema>
 
@@ -88,6 +91,8 @@ export interface SetupSummary {
 export interface SetupWithScene extends SetupSummary {
   version: number
   scene: SceneData
+  /** Avatar 3D de l'auteur (son profil) ; null s'il n'en a pas créé. */
+  authorAvatar: Avatar | null
 }
 
 export const setupUpdateSchema = z.object({

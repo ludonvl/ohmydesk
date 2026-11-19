@@ -22,6 +22,8 @@ interface ModelSpec {
   materials: MaterialSlot[]
   parts: ProceduralPart[]
   tags: string[]
+  /** Assise : [hauteur du dessus, décalage vers l'avant] (avatar assis). */
+  seat: [number, number]
 }
 
 const box = (size: Vec3, position: Vec3, slot: string, radius?: number, rotation?: Vec3): ProceduralPart => ({
@@ -68,6 +70,7 @@ const MODELS: ModelSpec[] = [
   {
     // Géométrie et couleurs de l'ancienne chaise unique, inchangées : des scènes y font référence.
     id: 'ergo', label: 'Ergonomique', name: 'Chaise ergonomique',
+    seat: [0.51, 0.0],
     description: 'Chaise de bureau à roulettes avec accoudoirs.',
     materials: [slot('main', 'Assise', '#FF6B35'), slot('frame', 'Structure', INK)],
     parts: [
@@ -82,6 +85,7 @@ const MODELS: ModelSpec[] = [
   },
   {
     id: 'gaming', label: 'Gaming', name: 'Chaise gaming',
+    seat: [0.54, 0.0],
     description: 'Siège baquet à dossier haut, appui-tête et accoudoirs.',
     materials: [slot('main', 'Garnissage', '#1E1B2E'), slot('accent', 'Liserés', '#FF4FD8'), slot('frame', 'Structure', INK)],
     parts: [
@@ -103,6 +107,7 @@ const MODELS: ModelSpec[] = [
   },
   {
     id: 'bureau', label: 'Opérateur', name: 'Chaise de bureau simple',
+    seat: [0.49, 0.01],
     description: 'Chaise opérateur à roulettes, sans accoudoirs, dossier mi-hauteur.',
     materials: [slot('main', 'Assise', '#4CC9A0'), slot('frame', 'Structure', INK)],
     parts: [
@@ -115,6 +120,7 @@ const MODELS: ModelSpec[] = [
   },
   {
     id: 'direction', label: 'Direction', name: 'Fauteuil de direction',
+    seat: [0.56, 0.0],
     description: 'Fauteuil capitonné à dossier haut, piètement chromé.',
     materials: [slot('main', 'Cuir', '#6B4334', { roughness: 0.45 }), slot('frame', 'Piètement', CHROME, { metalness: 0.6, roughness: 0.3 })],
     parts: [
@@ -132,6 +138,7 @@ const MODELS: ModelSpec[] = [
   },
   {
     id: 'bois', label: 'En bois', name: 'Chaise en bois',
+    seat: [0.5, 0.01],
     description: 'Chaise à quatre pieds en bois, galette d’assise.',
     materials: [slot('wood', 'Bois', WOOD), slot('cushion', 'Galette', SHELL, { roughness: 0.9 })],
     parts: [
@@ -148,6 +155,7 @@ const MODELS: ModelSpec[] = [
   },
   {
     id: 'tabouret', label: 'Tabouret haut', name: 'Tabouret haut',
+    seat: [0.76, 0.0],
     description: 'Tabouret de bar à repose-pieds, pour bureau debout.',
     materials: [slot('main', 'Assise', '#FFCF5A'), slot('frame', 'Structure', INK)],
     parts: [
@@ -162,6 +170,7 @@ const MODELS: ModelSpec[] = [
   },
   {
     id: 'fauteuil', label: 'Fauteuil', name: 'Fauteuil lounge',
+    seat: [0.44, 0.06],
     description: 'Fauteuil cosy à coussins, pieds en bois.',
     materials: [
       slot('fabric', 'Tissu', '#A497FF', { roughness: 0.95 }),
@@ -181,6 +190,7 @@ const MODELS: ModelSpec[] = [
   },
   {
     id: 'pouf', label: 'Pouf', name: 'Pouf',
+    seat: [0.4, 0.0],
     description: 'Pouf rond en tissu, assise d’appoint.',
     materials: [slot('main', 'Tissu', '#FF6B35', { roughness: 0.95 }), slot('band', 'Passepoil', '#2E2C3D', { roughness: 0.95 })],
     parts: [
@@ -226,4 +236,5 @@ export const chairItems: CatalogItem[] = MODELS.map((model): CatalogItem => ({
   model: { type: 'procedural', parts: model.parts },
   tags: ['chaise', 'siège', 'chair', ...model.tags],
   family: { id: chairFamily.id, options: { model: model.id } },
+  anchors: [{ name: 'seat', position: [0, model.seat[0], model.seat[1]] }],
 }))

@@ -161,6 +161,13 @@ export const useEditorStore = defineStore('editor', () => {
     })
   }
 
+  /** Affiche ou masque l'avatar de l'auteur dans ce setup. */
+  function setAvatarEnabled(enabled: boolean) {
+    commit((s) => {
+      s.avatar = { enabled }
+    })
+  }
+
   function setCamera(azimuth: number, zoom: number) {
     // La vue n'entre pas dans l'historique : c'est un réglage de présentation.
     scene.value.camera = { azimuth, zoom }
@@ -265,6 +272,6 @@ export const useEditorStore = defineStore('editor', () => {
     setupId, name, slug, description, isPublic, scene, selectedId, saveStatus, showGrid, previewUrl,
     selected, selectedItem, canUndo, canRedo,
     load, addObject, updateObject, setPosition, rotateObject, setColor, setVariant, setFinish, removeObject,
-    duplicateObject, setRoom, setCamera, undo, redo, setMeta, save, setPreviewCapture, flushPreview,
+    duplicateObject, setRoom, setAvatarEnabled, setCamera, undo, redo, setMeta, save, setPreviewCapture, flushPreview,
   }
 })

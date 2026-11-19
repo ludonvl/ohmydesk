@@ -1,8 +1,10 @@
-import { Box3, Vector3 } from 'three'
+import { Box3, MathUtils, Vector3 } from 'three'
+import type { Avatar } from '#shared/avatar/schema'
 import type { CatalogItem } from '#shared/catalog/types'
 import type { Room, SceneData } from '#shared/types/scene'
 import { getRoomTheme } from '#shared/themes'
 import { AssetManager } from './AssetManager'
+import { AvatarController } from './avatar/AvatarController'
 import { CameraManager } from './CameraManager'
 import { Emitter } from './Emitter'
 import { EnvironmentManager } from './EnvironmentManager'
@@ -66,6 +68,8 @@ export class Engine {
   private objects: ObjectManager
   private selection: SelectionManager
   private interaction: InteractionManager
+  private avatar: AvatarController
+  private avatarEnabled = true
   private room: Room | null = null
   private roomKey = ''
   private disposed = false
@@ -100,7 +104,13 @@ export class Engine {
       this.interactionOptions(),
     )
 
+    // Avatar de l'auteur : se promène dans le viewer, reste sur place dans l'éditeur.
+    this.avatar = new AvatarController(this.objects, () => this.room, () => MathUtils.degToRad(this.cameraManager.azimuth))
+    this.avatar.reducedMotion = typeof window !== 'undefined' && (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false)
+    this.sceneManager.world.add(this.avatar.root)
+
     this.unsubscribers.push(
+      this.sceneManager.addUpdater((dt) => this.avatar.update(dt)),
       this.sceneManager.onResize((w, h) => this.cameraManager.setSize(w, h)),
       this.sceneManager.addUpdater((dt) => {
         const moved = this.cameraManager.update(dt)
@@ -120,6 +130,7 @@ export class Engine {
     await this.objects.sync(scene.objects)
     if (this.disposed) return
     this.selection.refresh()
+    this.applySceneAvatar(scene)
     this.sceneManager.requestRender()
     this.events.emit('ready', undefined)
   }
@@ -134,7 +145,21 @@ export class Engine {
     await this.objects.sync(scene.objects)
     if (this.disposed) return
     this.selection.refresh()
+    this.applySceneAvatar(scene)
     this.sceneManager.requestRender()
+  }
+
+  /** Avatar de l'auteur (apparence de son profil) ; null = aucun avatar. */
+  setAvatar(avatar: Avatar | null) {
+    this.avatar.setAvatar(avatar)
+    this.avatar.setVisible(this.avatarEnabled)
+    this.sceneManager.requestRender()
+  }
+
+  private applySceneAvatar(scene: SceneData) {
+    this.avatarEnabled = scene.avatar?.enabled !== false
+    this.avatar.setVisible(this.avatarEnabled)
+    this.avatar.refresh()
   }
 
   select(id: string | null) {
@@ -225,6 +250,8 @@ export class Engine {
 
     this.cameraManager.setState(camera.azimuth, zoom)
     this.env.setGridVisible(false)
+    // L'aperçu montre le setup, pas son auteur.
+    this.avatar.setVisible(false)
     this.selection.select(null)
     renderer.setPixelRatio(1)
     renderer.setSize(width, height, false)
@@ -240,6 +267,7 @@ export class Engine {
     this.cameraManager.setSize(w0, h0)
     this.cameraManager.restoreState(camera)
     this.env.setGridVisible(this.options.grid)
+    this.avatar.setVisible(this.avatarEnabled)
     this.selection.select(selected)
     // Redessine tout de suite : le redimensionnement a vidé le canvas, on évite une image vide à l'écran.
     this.sceneManager.renderNow()
@@ -268,6 +296,7 @@ export class Engine {
 
   private applyOptions() {
     this.interaction.setOptions(this.interactionOptions())
+    this.avatar.behavior = this.options.mode === 'editor' ? 'static' : 'wander'
     this.cameraManager.setOptions({ autoRotate: this.options.autoRotate, autoRotateSpeed: this.options.autoRotateSpeed })
     this.env.setGridVisible(this.options.grid)
     this.sceneManager.requestRender()
@@ -277,6 +306,7 @@ export class Engine {
     this.disposed = true
     this.unsubscribers.forEach((u) => u())
     this.interaction.dispose()
+    this.avatar.dispose()
     this.objects.clear()
     this.env.clear()
     this.selection.dispose()

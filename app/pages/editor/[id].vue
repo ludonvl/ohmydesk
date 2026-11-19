@@ -250,6 +250,7 @@ onBeforeUnmount(() => {
           :scene="editor.scene"
           :selected-id="editor.selectedId"
           :options="engineOptions"
+          :avatar="data?.authorAvatar ?? null"
           label="Scène 3D en cours d’édition"
           @select="editor.selectedId = $event"
           @transform-end="onTransformEnd"

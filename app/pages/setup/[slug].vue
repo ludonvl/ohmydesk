@@ -109,6 +109,7 @@ function onLike(state: LikeState) {
           :scene="setup.scene"
           :selected-id="highlighted"
           :options="{ mode: 'viewer', autoRotate, controls: true, zoom: true }"
+          :avatar="setup.authorAvatar"
           :label="`Scène 3D du setup ${setup.name}`"
           @object-click="highlighted = $event"
         >

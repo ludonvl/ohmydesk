@@ -8,6 +8,7 @@ import { useEditorStore } from '~/stores/editor'
 const emit = defineEmits<{ close: [] }>()
 const editor = useEditorStore()
 const room = computed(() => editor.scene.room)
+const avatarEnabled = computed(() => editor.scene.avatar?.enabled !== false)
 
 const fmt = (v: number) => `${v.toFixed(1).replace('.', ',')} m`
 const surface = computed(() => `${fmt(room.value.width).replace(' m', '')} × ${fmt(room.value.depth)} · ${(Math.round(room.value.width * room.value.depth * 10) / 10).toString().replace('.', ',')} m²`)
@@ -173,6 +174,23 @@ function step(key: 'width' | 'depth' | 'height', delta: number) {
             class="flex h-7 w-12 rounded-desk-pill p-[3px] transition-colors"
             :class="editor.showGrid ? 'justify-end bg-desk-active' : 'justify-start bg-desk-line-strong'"
             @click="editor.showGrid = !editor.showGrid"
+          >
+            <span class="size-[22px] rounded-desk-pill bg-desk-surface shadow-sm" />
+          </button>
+        </div>
+        <div class="flex min-h-11 items-center justify-between gap-3">
+          <span class="flex flex-col">
+            <span class="text-desk-body text-desk-ink">Mon avatar</span>
+            <span class="text-desk-caption text-desk-ink-muted">Il se promène dans la pièce pour les visiteurs.</span>
+          </span>
+          <button
+            type="button"
+            role="switch"
+            :aria-checked="avatarEnabled"
+            aria-label="Mon avatar"
+            class="flex h-7 w-12 shrink-0 rounded-desk-pill p-[3px] transition-colors"
+            :class="avatarEnabled ? 'justify-end bg-desk-active' : 'justify-start bg-desk-line-strong'"
+            @click="editor.setAvatarEnabled(!avatarEnabled)"
           >
             <span class="size-[22px] rounded-desk-pill bg-desk-surface shadow-sm" />
           </button>
