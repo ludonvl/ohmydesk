@@ -10,7 +10,7 @@ const themeColors: Record<RoomThemeId, Record<string, Record<string, string>>> =
   studio: {},
   neon: {
     'desk-basic': { top: '#1E1A40', legs: '#0F0D22' },
-    'monitor-27': { frame: '#0F0D22', screen: '#24E1FF' },
+    'monitor-27': { frame: '#0F0D22', screen: '#24E1FF', stand: '#0F0D22' },
     'keyboard-75': { body: '#2D2760', keys: '#3A3378', accent: '#FF4FD8' },
     mouse: { body: '#3A3378' },
     'desk-mat': { mat: '#0F0D22' },
@@ -25,7 +25,7 @@ const themeColors: Record<RoomThemeId, Record<string, Record<string, string>>> =
   },
   scandi: {
     'desk-basic': { top: '#C99D70', legs: '#F5F2EC' },
-    'monitor-27': { frame: '#3B3A36', screen: '#EDE3CC' },
+    'monitor-27': { frame: '#3B3A36', screen: '#EDE3CC', stand: '#3B3A36' },
     'keyboard-75': { body: '#E9DFD0', keys: '#F5F2EC', accent: '#7E9C8F' },
     'desk-mat': { mat: '#E9DFD0' },
     'chair-ergo': { main: '#7E9C8F', frame: '#3B3A36' },

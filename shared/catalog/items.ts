@@ -1,6 +1,7 @@
 import { deskFamily, deskItems } from './families/desks'
 import { neonFamily, neonItems } from './families/neons'
 import { posterFamily, posterItems } from './families/posters'
+import { screenFamily, screenItems } from './families/screens'
 import type { CatalogCategory, CatalogFamily, CatalogItem, ProceduralPart, Vec3 } from './types'
 
 export const catalogCategories: CatalogCategory[] = [
@@ -33,30 +34,7 @@ const SHELL = '#FBF8F3'
  */
 export const catalogItems: CatalogItem[] = [
   ...deskItems,
-  {
-    id: 'monitor-27',
-    slug: 'ecran-27',
-    name: 'Écran 27"',
-    category: 'screens',
-    description: 'Moniteur 27 pouces sur pied central.',
-    dimensions: { width: 0.62, height: 0.59, depth: 0.2 },
-    defaultScale: 1,
-    placement: 'surface',
-    materials: [
-      { slot: 'frame', label: 'Châssis', default: INK, customizable: true },
-      { slot: 'screen', label: "Fond d'écran", default: '#7C6BFF', customizable: true, emissive: 0.9, roughness: 0.3 },
-    ],
-    model: {
-      type: 'procedural',
-      parts: [
-        box([0.24, 0.015, 0.18], [0, 0.0075, -0.02], 'frame', 0.005),
-        box([0.05, 0.32, 0.03], [0, 0.175, -0.07], 'frame'),
-        box([0.62, 0.37, 0.03], [0, 0.4, -0.04], 'frame', 0.008),
-        box([0.59, 0.34, 0.004], [0, 0.4, -0.0235], 'screen'),
-      ],
-    },
-    tags: ['écran', 'moniteur', 'monitor'],
-  },
+  ...screenItems,
   {
     id: 'keyboard-75',
     slug: 'clavier-75',
@@ -346,7 +324,7 @@ export function getCatalogItem(id: string): CatalogItem | undefined {
   return catalogById.get(id)
 }
 
-export const catalogFamilies: CatalogFamily[] = [deskFamily, neonFamily, posterFamily]
+export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, neonFamily, posterFamily]
 const familyById: ReadonlyMap<string, CatalogFamily> = new Map(catalogFamilies.map((f) => [f.id, f]))
 
 export function getFamily(id: string | undefined): CatalogFamily | undefined {
