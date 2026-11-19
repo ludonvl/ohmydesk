@@ -102,7 +102,7 @@ const templates = Object.values(roomThemes).map((t) => ({ id: t.id as RoomThemeI
               {{ s.isPublic ? 'Public' : 'Privé' }}
             </span>
           </div>
-          <p class="text-[13px] text-muted">Modifié le {{ dateFormat.format(new Date(s.updatedAt)) }} · {{ s.scene.objects.length }} objets</p>
+          <p class="text-[13px] text-muted">Modifié le {{ dateFormat.format(new Date(s.updatedAt)) }} · {{ s.scene.objects.length }} objets<template v-if="s.isPublic"> · {{ s.likeCount }} j’aime</template></p>
           <div class="mt-auto flex flex-wrap gap-2 pt-1">
             <template v-if="confirmingId === s.id">
               <Button

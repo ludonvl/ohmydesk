@@ -23,7 +23,7 @@ npm run dev              # http://localhost:3000
 | `db:studio` | Explorateur de données Drizzle |
 | `db:seed` | Catalogue et setups de démo (idempotent) |
 
-Tables : `user`, `session`, `account`, `verification` (Better Auth), `setup` (dont `preview_url`), `setup_version` (scène en JSONB), `catalog_category`, `catalog_item`.
+Tables : `user` (dont `username`, `bio`), `session`, `account`, `verification` (Better Auth), `setup` (dont `preview_url`, `like_count`), `setup_version` (scène en JSONB), `setup_like`, `catalog_category`, `catalog_item`.
 Les sauvegardes automatiques rapprochées (moins de 10 min) mettent à jour la même `setup_version` ; au-delà, une nouvelle version est créée.
 
 ### Fichiers (Vercel Blob)
@@ -50,6 +50,18 @@ Utilisés par le tableau de bord et comme image de partage (`og:image`) du viewe
 Conventions d'un GLB : mètres, origine au centre de la base, face avant vers +Z, matériaux personnalisables
 nommés comme leur slot (`body`, `pot`…). Nouvelle version d'un modèle = nouveau nom de fichier (`-v2`).
 
+### Galerie, profils et likes
+
+- **Galerie** (`/gallery`, `?tri=populaires`) : setups publics par date de publication ou par nombre de likes, 24 par page.
+  Les cartes affichent l'aperçu PNG, ou le rendu SVG tant qu'il n'existe pas. Les trois plus aimés apparaissent sur l'accueil.
+- **Profils** (`/u/:username`) : nom, bio, setups publics, likes reçus. `/u/me` redirige vers son propre profil.
+  L'identifiant est attribué à l'inscription (dérivé du nom) et se modifie dans `/settings#profil`
+  (3 à 30 caractères : minuscules, chiffres, tirets ; quelques mots réservés).
+- **Likes** : `POST` / `DELETE /api/setups/:id/like` (setups publics, connexion requise, idempotent).
+  `setup.like_count` est recalculé dans la même transaction et sert au tri « Populaires ».
+- **Cache** : galerie, profils et viewer renvoient la même réponse à tout le monde (cache CDN) ;
+  les likes de la personne connectée sont lus à part, côté client (`GET /api/me/likes?ids=…`).
+
 ### Authentification
 
 Better Auth, email + mot de passe avec **confirmation obligatoire de l'email** (lien envoyé via Resend, valable 1 h, connexion automatique après clic).
@@ -70,6 +82,7 @@ URI de redirection à déclarer dans Google Cloud : `http://localhost:3000/api/a
 - `/` : page d'accueil
 - `/signup`, `/login` : compte
 - `/dashboard` : mes setups
+- `/gallery` : galerie publique · `/u/:username` : profil public
 - `/confidentialite`, `/conditions-utilisation` : pages légales (informations éditeur à compléter dans `app/lib/legal.ts`)
 - `/settings` : email et mot de passe · `/forgot-password`, `/reset-password`
 - `/editor/new` : crée un setup puis ouvre l'éditeur (`?template=studio|neon|scandi`, `?from=<slug>` pour remixer)
@@ -137,7 +150,7 @@ server/              API Nitro
 - [x] Étape 1 : fondations Nuxt 4, moteur 3D, éditeur, viewer public, viewer embarqué, catalogue procédural
 - [x] Étape 2 : Neon + Drizzle (User, Setup, SetupVersion, CatalogItem, CatalogCategory), Better Auth (email/mot de passe, OAuth Google prêt), routes protégées
 - [x] Étape 3 : Vercel Blob (repli local), aperçus PNG via `engine.capture()`, premiers modèles GLB (tasse, succulente) avec repli procédural. Textures : chargement KTX2 prêt, aucune texture publiée pour l'instant
-- [ ] Étape 4 : galerie publique, profils, likes
+- [x] Étape 4 : galerie publique (récents, populaires), profils publics, likes
 
 ## Déploiement Vercel
 

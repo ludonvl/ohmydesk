@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm'
-import { bigint, boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import { bigint, boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
 import type { CatalogItem } from '../../shared/catalog/types'
 import type { SceneData } from '../../shared/types/scene'
 
@@ -22,6 +22,12 @@ export const user = pgTable('user', {
   emailVerified: boolean('email_verified').notNull().default(false),
   /** « avatar » dans le modèle de données ; Better Auth l'appelle « image ». */
   image: text('avatar'),
+  /**
+   * Identifiant public du profil (/u/:username). Hors du schéma Better Auth : attribué juste après
+   * l'inscription (hook `user.create.after`), modifiable dans les paramètres.
+   */
+  username: text('username').unique(),
+  bio: text('bio').notNull().default(''),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 })
@@ -134,11 +140,32 @@ export const setup = pgTable(
     currentVersion: integer('current_version').notNull().default(1),
     /** Aperçu PNG de la scène (Vercel Blob), régénéré par l'éditeur après les modifications. */
     previewUrl: text('preview_url'),
+    /** Nombre de likes, dénormalisé pour trier la galerie ; recalculé à chaque like / unlike. */
+    likeCount: integer('like_count').notNull().default(0),
     publishedAt: timestamp('published_at', { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index('setup_user_idx').on(t.userId), index('setup_public_idx').on(t.isPublic, t.publishedAt)],
+  (t) => [
+    index('setup_user_idx').on(t.userId),
+    index('setup_public_idx').on(t.isPublic, t.publishedAt),
+    index('setup_popular_idx').on(t.isPublic, t.likeCount),
+  ],
+)
+
+/** Un like par personne et par setup (la clé primaire rend le like idempotent). */
+export const setupLike = pgTable(
+  'setup_like',
+  {
+    setupId: text('setup_id')
+      .notNull()
+      .references(() => setup.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: createdAt(),
+  },
+  (t) => [primaryKey({ columns: [t.setupId, t.userId] }), index('setup_like_user_idx').on(t.userId)],
 )
 
 export const setupVersion = pgTable(
@@ -166,6 +193,12 @@ export const userRelations = relations(user, ({ many }) => ({
 export const setupRelations = relations(setup, ({ one, many }) => ({
   user: one(user, { fields: [setup.userId], references: [user.id] }),
   versions: many(setupVersion),
+  likes: many(setupLike),
+}))
+
+export const setupLikeRelations = relations(setupLike, ({ one }) => ({
+  setup: one(setup, { fields: [setupLike.setupId], references: [setup.id] }),
+  user: one(user, { fields: [setupLike.userId], references: [user.id] }),
 }))
 
 export const setupVersionRelations = relations(setupVersion, ({ one }) => ({

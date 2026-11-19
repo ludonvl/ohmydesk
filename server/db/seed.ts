@@ -20,8 +20,20 @@ if (!url) {
 const db = drizzle(neon(url), { schema })
 
 const DEMO_USERS = [
-  { id: 'user_demo_camille', name: 'Camille', email: 'camille@demo.ohmydesk.invalid' },
-  { id: 'user_demo_nox', name: 'Nox', email: 'nox@demo.ohmydesk.invalid' },
+  {
+    id: 'user_demo_camille',
+    name: 'Camille',
+    email: 'camille@demo.ohmydesk.invalid',
+    username: 'camille',
+    bio: 'Illustratrice. Bois clair, plantes vertes et une tasse toujours à portée de main.',
+  },
+  {
+    id: 'user_demo_nox',
+    name: 'Nox',
+    email: 'nox@demo.ohmydesk.invalid',
+    username: 'nox',
+    bio: 'Dev le jour, joueur la nuit. Plus il y a de néons, mieux c’est.',
+  },
 ]
 
 const DEMO_SETUPS: { slug: string; name: string; description: string; theme: RoomThemeId; userId: string }[] = [
@@ -74,7 +86,10 @@ async function main() {
 
   console.log('→ Comptes de démonstration (sans mot de passe, connexion impossible)')
   for (const u of DEMO_USERS) {
-    await db.insert(schema.user).values({ ...u, emailVerified: true }).onConflictDoNothing()
+    await db
+      .insert(schema.user)
+      .values({ ...u, emailVerified: true })
+      .onConflictDoUpdate({ target: schema.user.id, set: { username: u.username, bio: u.bio } })
   }
 
   console.log('→ Setups de démonstration')

@@ -2,6 +2,7 @@
 import { Check, ChevronRight, Code, Copy, Hand, Link, Maximize, Rotate3d, ZoomIn, ZoomOut } from 'lucide-vue-next'
 import { getCatalogItem, getCategoryName } from '#shared/catalog/items'
 import type { SetupWithScene } from '#shared/types/scene'
+import type { LikeState } from '#shared/types/social'
 import { Button } from '~/components/ui/button'
 
 interface CanvasApi {
@@ -85,7 +86,13 @@ const publishedLabel = computed(() =>
     ? new Intl.DateTimeFormat('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(setup.value.publishedAt))
     : '',
 )
-const initials = computed(() => (setup.value?.authorName ?? '?').slice(0, 2).toUpperCase())
+// Les likes de la personne connectée sont lus côté client : la page reste en cache pour tout le monde.
+const { liked, set: setLiked } = useMyLikes(() => (setup.value ? [setup.value.id] : []))
+function onLike(state: LikeState) {
+  if (!setup.value) return
+  setup.value.likeCount = state.likeCount
+  setLiked(setup.value.id, state.liked)
+}
 </script>
 
 <template>
@@ -143,9 +150,10 @@ const initials = computed(() => (setup.value?.authorName ?? '?').slice(0, 2).toU
 
     <aside class="flex max-w-[460px] min-w-0 flex-[1_1_360px] flex-col gap-5">
       <div class="flex items-center gap-3">
-        <span class="grid size-11 place-items-center rounded-full bg-[#7E9C8F] font-display text-[15px] font-bold text-white" aria-hidden="true">{{ initials }}</span>
+        <UserAvatar :name="setup.authorName" :image="setup.authorImage" :size="44" />
         <div class="flex flex-col">
-          <span class="font-semibold">{{ setup.authorName }}</span>
+          <NuxtLink v-if="setup.authorUsername" :to="`/u/${setup.authorUsername}`" class="font-semibold hover:text-link">{{ setup.authorName }}</NuxtLink>
+          <span v-else class="font-semibold">{{ setup.authorName }}</span>
           <span v-if="publishedLabel" class="text-[13px] text-muted">Publié le {{ publishedLabel }}</span>
         </div>
       </div>
@@ -157,6 +165,7 @@ const initials = computed(() => (setup.value?.authorName ?? '?').slice(0, 2).toU
         <Button as-child size="default" class="h-[46px]">
           <NuxtLink :to="`/editor/new?from=${setup.slug}`"><Copy class="size-[17px]" />Remixer ce setup</NuxtLink>
         </Button>
+        <LikeButton :setup-id="setup.id" :setup-name="setup.name" :liked="liked.has(setup.id)" :count="setup.likeCount" size="lg" @change="onLike" />
         <Button variant="outline" size="icon" class="size-[46px]" :aria-label="copied === 'link' ? 'Lien copié' : 'Copier le lien'" :title="copied === 'link' ? 'Lien copié' : 'Copier le lien'" @click="copy(`${origin}/setup/${setup.slug}`, 'link')">
           <Check v-if="copied === 'link'" class="size-[19px] text-[#2f9e78]" />
           <Link v-else class="size-[19px]" />

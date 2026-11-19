@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { BadgeCheck, CircleAlert, LoaderCircle } from 'lucide-vue-next'
 import { Button } from '~/components/ui/button'
+import type { OwnProfile } from '#shared/types/social'
+import { BIO_MAX, usernameSchema } from '#shared/types/social'
 import { authClient, authErrorMessage, isValidEmail, PASSWORD_MIN } from '~/lib/auth-client'
 
 definePageMeta({ middleware: 'auth' })
@@ -11,6 +13,64 @@ const router = useRouter()
 const config = useRuntimeConfig()
 const { data: session } = await authClient.useSession(useFetch)
 const user = computed(() => session.value?.user ?? null)
+
+/* ---------------- Profil public ---------------- */
+
+const { data: ownProfile } = await useFetch<OwnProfile>('/api/profile', { headers: useRequestHeaders(['cookie']) })
+const profileForm = reactive({ name: '', username: '', bio: '' })
+watch(
+  ownProfile,
+  (p) => {
+    if (p) Object.assign(profileForm, { name: p.name, username: p.username, bio: p.bio })
+  },
+  { immediate: true },
+)
+const profileTouched = reactive({ name: false, username: false })
+const profileSubmitting = ref(false)
+const profileError = ref('')
+const profileServerField = ref<{ field: string; message: string } | null>(null)
+const profileDone = ref(false)
+
+const profileErrors = computed(() => {
+  const server = profileServerField.value
+  const usernameCheck = usernameSchema.safeParse(profileForm.username)
+  return {
+    name: server?.field === 'name' ? server.message : profileTouched.name && !profileForm.name.trim() ? 'Indique un nom.' : '',
+    username:
+      server?.field === 'username'
+        ? server.message
+        : profileTouched.username && !usernameCheck.success
+          ? (usernameCheck.error.issues[0]?.message ?? 'Identifiant invalide.')
+          : '',
+    bio: profileForm.bio.length > BIO_MAX ? `${BIO_MAX} caractères au maximum.` : '',
+  }
+})
+const host = useRequestURL().host
+const profileUrl = computed(() => `${host}/u/${profileForm.username.trim().toLowerCase() || '…'}`)
+
+async function saveProfile() {
+  profileTouched.name = profileTouched.username = true
+  profileServerField.value = null
+  profileError.value = ''
+  profileDone.value = false
+  if (profileErrors.value.name || profileErrors.value.username || profileErrors.value.bio) return
+  profileSubmitting.value = true
+  try {
+    ownProfile.value = await $fetch<OwnProfile>('/api/profile', {
+      method: 'PUT',
+      body: { name: profileForm.name, username: profileForm.username, bio: profileForm.bio },
+    })
+    profileDone.value = true
+  } catch (e) {
+    const err = e as { statusCode?: number; data?: { statusMessage?: string; data?: { field?: string } } }
+    const message = err.data?.statusMessage ?? 'Ton profil n’a pas pu être enregistré. Réessaie.'
+    if (err.statusCode === 409) profileServerField.value = { field: 'username', message }
+    else if (err.data?.data?.field) profileServerField.value = { field: err.data.data.field, message }
+    else profileError.value = message
+  } finally {
+    profileSubmitting.value = false
+  }
+}
 
 /* ---------------- Comptes associés (mot de passe, Google) ---------------- */
 
@@ -183,10 +243,68 @@ async function changePassword() {
   <main class="mx-auto flex max-w-[720px] flex-col gap-6 px-6 pt-6 pb-24">
     <div class="flex flex-col gap-1.5">
       <h1 class="font-display text-[40px] leading-tight font-extrabold tracking-tight">Paramètres</h1>
-      <p class="text-subtle">Ton adresse email, ton mot de passe et tes moyens de connexion.</p>
+      <p class="text-subtle">Ton profil public, ton adresse email, ton mot de passe et tes moyens de connexion.</p>
     </div>
 
     <FormNotice v-if="pageNotice" :kind="pageNotice.kind">{{ pageNotice.text }}</FormNotice>
+
+    <!-- Profil public -->
+    <section id="profil" aria-labelledby="profile-title" class="flex scroll-mt-6 flex-col gap-5 rounded-3xl border border-line bg-white p-7">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="flex flex-col gap-1.5">
+          <h2 id="profile-title" class="font-display text-2xl font-bold">Profil public</h2>
+          <p class="text-[15px] text-subtle">Visible par tout le monde, avec tes setups publiés.</p>
+        </div>
+        <NuxtLink v-if="ownProfile" :to="`/u/${ownProfile.username}`" class="text-sm font-semibold text-link">Voir mon profil</NuxtLink>
+      </div>
+
+      <form class="flex flex-col gap-4" novalidate @submit.prevent="saveProfile">
+        <TextField
+          id="profile-name"
+          v-model="profileForm.name"
+          label="Nom affiché"
+          autocomplete="nickname"
+          :error="profileErrors.name"
+          @blur="profileTouched.name = true"
+        />
+        <TextField
+          id="profile-username"
+          v-model="profileForm.username"
+          label="Identifiant"
+          autocomplete="username"
+          :hint="`Adresse de ton profil : ${profileUrl}`"
+          :error="profileErrors.username"
+          @blur="profileTouched.username = true"
+          @update:model-value="profileServerField = null"
+        />
+        <div class="flex flex-col gap-1.5">
+          <div class="flex items-baseline justify-between gap-3">
+            <label for="profile-bio" class="text-sm font-semibold">Bio</label>
+            <span class="text-[13px] tabular-nums" :class="profileErrors.bio ? 'text-[#b3361f]' : 'text-muted'">{{ profileForm.bio.length }} / {{ BIO_MAX }}</span>
+          </div>
+          <textarea
+            id="profile-bio"
+            v-model="profileForm.bio"
+            rows="3"
+            class="w-full resize-y rounded-xl border bg-white px-4 py-3 text-[15px] leading-relaxed text-ink focus:outline-none focus-visible:border-ink"
+            :class="profileErrors.bio ? 'border-[#c2412d]' : 'border-line-strong'"
+            :aria-invalid="!!profileErrors.bio"
+            aria-describedby="profile-bio-hint"
+          />
+          <p id="profile-bio-hint" class="text-[13px]" :class="profileErrors.bio ? 'text-[#b3361f]' : 'text-muted'">
+            {{ profileErrors.bio || 'Quelques mots sur toi ou ton setup.' }}
+          </p>
+        </div>
+        <FormNotice v-if="profileError" kind="error">{{ profileError }}</FormNotice>
+        <FormNotice v-if="profileDone" kind="success">Profil enregistré.</FormNotice>
+        <div>
+          <Button type="submit" :aria-busy="profileSubmitting">
+            <LoaderCircle v-if="profileSubmitting" class="size-4 animate-spin" aria-hidden="true" />
+            Enregistrer le profil
+          </Button>
+        </div>
+      </form>
+    </section>
 
     <!-- Adresse email -->
     <section aria-labelledby="email-title" class="flex flex-col gap-5 rounded-3xl border border-line bg-white p-7">

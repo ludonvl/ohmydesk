@@ -13,7 +13,7 @@ const { data: session } = await authClient.useSession(useFetch)
         <span class="font-display text-xl font-extrabold tracking-tight">Oh My Desk</span>
       </NuxtLink>
       <nav aria-label="Navigation principale" class="flex flex-wrap gap-6 text-[15px] font-medium">
-        <NuxtLink to="/setup/bureau-du-dimanche" class="text-subtle hover:text-ink">Galerie</NuxtLink>
+        <NuxtLink to="/gallery" class="text-subtle hover:text-ink" active-class="!text-ink">Galerie</NuxtLink>
         <NuxtLink to="/#modeles" class="text-subtle hover:text-ink">Modèles</NuxtLink>
         <NuxtLink to="/#integrer" class="text-subtle hover:text-ink">Intégrer</NuxtLink>
       </nav>

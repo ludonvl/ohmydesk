@@ -1,6 +1,6 @@
 import type { SQL } from 'drizzle-orm'
 import { and, desc, eq } from 'drizzle-orm'
-import type { SceneData, SetupUpdate, SetupWithScene } from '#shared/types/scene'
+import type { SceneData, SetupSummary, SetupUpdate, SetupWithScene } from '#shared/types/scene'
 import { createId, slugify } from '#shared/utils/ids'
 import { schema, useDb } from '../db/client'
 import { deleteFile, putFile } from './storage'
@@ -21,7 +21,7 @@ const iso = (d: Date | null) => (d ? d.toISOString() : null)
 
 async function findOne(where: SQL): Promise<SetupRecord | null> {
   const rows = await useDb()
-    .select({ s: setup, authorName: user.name, scene: setupVersion.sceneData, version: setupVersion.version })
+    .select({ s: setup, author: authorColumns, scene: setupVersion.sceneData, version: setupVersion.version })
     .from(setup)
     .innerJoin(user, eq(user.id, setup.userId))
     .innerJoin(setupVersion, and(eq(setupVersion.setupId, setup.id), eq(setupVersion.version, setup.currentVersion)))
@@ -29,25 +29,34 @@ async function findOne(where: SQL): Promise<SetupRecord | null> {
     .limit(1)
   const row = rows[0]
   if (!row) return null
-  return toRecord(row.s, row.authorName, row.scene, row.version)
+  return toRecord(row.s, row.author, row.scene, row.version)
 }
 
-function toRecord(s: typeof setup.$inferSelect, authorName: string, scene: SceneData, version: number): SetupRecord {
+/** Colonnes de l'auteur affichées avec un setup (cartes, viewer public). */
+export const authorColumns = { name: user.name, username: user.username, image: user.image }
+export type Author = { name: string; username: string | null; image: string | null }
+
+/** Champs publics communs à toutes les vues d'un setup (sans la scène). */
+export function toSummary(s: typeof setup.$inferSelect, author: Author): SetupSummary {
   return {
     id: s.id,
-    userId: s.userId,
     name: s.name,
     slug: s.slug,
     description: s.description,
     isPublic: s.isPublic,
-    authorName,
+    authorName: author.name,
+    authorUsername: author.username,
+    authorImage: author.image,
+    likeCount: s.likeCount,
     previewUrl: s.previewUrl,
     publishedAt: iso(s.publishedAt),
     createdAt: s.createdAt.toISOString(),
     updatedAt: s.updatedAt.toISOString(),
-    version,
-    scene,
   }
+}
+
+function toRecord(s: typeof setup.$inferSelect, author: Author, scene: SceneData, version: number): SetupRecord {
+  return { ...toSummary(s, author), userId: s.userId, version, scene }
 }
 
 /** Retire les champs internes avant d'envoyer au client. */
@@ -66,13 +75,13 @@ export function getSetupBySlug(slug: string) {
 
 export async function listSetupsByUser(userId: string): Promise<SetupWithScene[]> {
   const rows = await useDb()
-    .select({ s: setup, authorName: user.name, scene: setupVersion.sceneData, version: setupVersion.version })
+    .select({ s: setup, author: authorColumns, scene: setupVersion.sceneData, version: setupVersion.version })
     .from(setup)
     .innerJoin(user, eq(user.id, setup.userId))
     .innerJoin(setupVersion, and(eq(setupVersion.setupId, setup.id), eq(setupVersion.version, setup.currentVersion)))
     .where(eq(setup.userId, userId))
     .orderBy(desc(setup.updatedAt))
-  return rows.map((r) => toPublic(toRecord(r.s, r.authorName, r.scene, r.version)))
+  return rows.map((r) => toPublic(toRecord(r.s, r.author, r.scene, r.version)))
 }
 
 async function uniqueSlug(name: string): Promise<string> {

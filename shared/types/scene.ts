@@ -63,6 +63,10 @@ export interface SetupSummary {
   description: string
   isPublic: boolean
   authorName: string
+  /** Identifiant du profil public de l'auteur (/u/:username). */
+  authorUsername: string | null
+  authorImage: string | null
+  likeCount: number
   /** Aperçu PNG (URL absolue Vercel Blob, ou `/blob/…` en développement local). */
   previewUrl: string | null
   publishedAt: string | null

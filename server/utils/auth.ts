@@ -4,6 +4,7 @@ import { APIError, createAuthMiddleware } from 'better-auth/api'
 import type { H3Event } from 'h3'
 import { schema, useDb } from '../db/client'
 import type { MailResult } from './email'
+import { ensureUsername } from './social'
 import {
   changeEmailApprovalEmail,
   newEmailVerificationEmail,
@@ -96,6 +97,22 @@ function createAuth() {
         // puis la nouvelle adresse est confirmée par un second lien.
         sendChangeEmailConfirmation: async ({ user, newEmail, url }) => {
           failLoudly(await sendMail({ to: user.email, ...changeEmailApprovalEmail(user.name, newEmail, url) }))
+        },
+      },
+    },
+
+    // Identifiant de profil public (/u/:username) attribué dès l'inscription.
+    databaseHooks: {
+      user: {
+        create: {
+          after: async (user) => {
+            try {
+              await ensureUsername(user.id, user.name)
+            } catch (error) {
+              // Non bloquant : l'identifiant sera attribué à la première visite des paramètres ou du profil.
+              console.error('[auth] Attribution de l’identifiant impossible', error)
+            }
+          },
         },
       },
     },

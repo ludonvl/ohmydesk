@@ -2,6 +2,7 @@
 import { ArrowRight, Box, Share2, Square } from 'lucide-vue-next'
 import { roomThemes } from '#shared/themes'
 import type { RoomThemeId } from '#shared/types/scene'
+import type { GalleryPage, GallerySetup, LikeState } from '#shared/types/social'
 import { createDefaultScene } from '#shared/utils/defaultScene'
 import { Button } from '~/components/ui/button'
 
@@ -11,6 +12,15 @@ useSeoMeta({
 })
 
 const heroScene = useState('hero-scene', () => createDefaultScene('studio'))
+
+// Setups les plus aimés de la communauté (masqué s'il n'y en a pas encore).
+const { data: community } = await useFetch<GalleryPage>('/api/gallery', { query: { sort: 'popular', limit: 3 } })
+const communitySetups = computed(() => community.value?.items ?? [])
+const { liked, set: setLiked } = useMyLikes(() => communitySetups.value.map((s) => s.id))
+function onLike(item: GallerySetup, state: LikeState) {
+  item.likeCount = state.likeCount
+  setLiked(item.id, state.liked)
+}
 const templates = useState('template-scenes', () =>
   (['studio', 'neon', 'scandi'] as RoomThemeId[]).map((id) => ({ id, scene: createDefaultScene(id) })),
 )
@@ -46,7 +56,7 @@ const steps = [
             <NuxtLink to="/editor/new">Créer mon setup<ArrowRight class="size-[18px]" /></NuxtLink>
           </Button>
           <Button variant="outline" size="lg" as-child>
-            <NuxtLink to="/setup/bureau-du-dimanche">Explorer la galerie</NuxtLink>
+            <NuxtLink to="/gallery">Explorer la galerie</NuxtLink>
           </Button>
         </div>
         <p class="text-sm text-muted">Aucune installation · Sauvegarde automatique · Lien public en un clic</p>
@@ -59,6 +69,21 @@ const steps = [
           <template #fallback><IsoPreview :scene="heroScene" /></template>
         </ClientOnly>
       </div>
+    </section>
+
+    <section v-if="communitySetups.length" aria-labelledby="community-title" class="mx-auto max-w-[1320px] px-6 pt-6 pb-20">
+      <div class="mb-7 flex flex-wrap items-end justify-between gap-6">
+        <div class="flex max-w-[620px] flex-col gap-2.5">
+          <h2 id="community-title" class="font-display text-[44px] leading-[1.05] font-extrabold tracking-[-0.025em]">Les coups de cœur de la galerie.</h2>
+          <p class="text-[17px] leading-relaxed text-subtle">Les setups les plus aimés de la communauté. Remixe celui qui te ressemble.</p>
+        </div>
+        <NuxtLink to="/gallery?tri=populaires" class="text-[15px] font-semibold text-link">Voir toute la galerie →</NuxtLink>
+      </div>
+      <ul class="grid grid-cols-1 gap-5 md:grid-cols-3">
+        <li v-for="item in communitySetups" :key="item.id">
+          <SetupCard :setup="item" :liked="liked.has(item.id)" class="h-full" @like="onLike(item, $event)" />
+        </li>
+      </ul>
     </section>
 
     <section id="modeles" class="mx-auto max-w-[1320px] px-6 pt-6 pb-20">
