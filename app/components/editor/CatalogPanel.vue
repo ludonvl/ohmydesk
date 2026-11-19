@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Crosshair, Plus, Search, X } from 'lucide-vue-next'
-import { catalogItems, getCatalogItem, getCategoryName } from '#shared/catalog/items'
+import { catalogItems, findFamilyVariant, getCatalogItem, getCategoryName, getFamily } from '#shared/catalog/items'
 import type { CatalogItem, CategorySlug } from '#shared/catalog/types'
 import { CATALOG_DRAG_TYPE } from '~/lib/dnd'
 import { useEditorStore } from '~/stores/editor'
@@ -20,7 +20,39 @@ const matches = (item: CatalogItem) => {
 }
 
 /** Mode Catalogue : tous les objets de la catégorie. */
-const catalogList = computed(() => catalogItems.filter((item) => item.category === props.category && matches(item)))
+/**
+ * Une vignette par objet ; pour une famille, une vignette par valeur de son premier axe
+ * (ex. un bureau par piètement), les autres axes se règlent dans l'inspecteur.
+ */
+const catalogList = computed(() => {
+  const entries: { item: CatalogItem; variants: number }[] = []
+  const groups = new Map<string, { familyId: string; options: Record<string, string>; members: CatalogItem[] }>()
+  for (const item of catalogItems) {
+    if (item.category !== props.category) continue
+    const family = getFamily(item.family?.id)
+    if (!family || !item.family) {
+      if (matches(item)) entries.push({ item, variants: 1 })
+      continue
+    }
+    const axis = family.axes[0]!.id
+    const key = `${family.id}:${item.family.options[axis]}`
+    let group = groups.get(key)
+    if (!group) {
+      group = { familyId: family.id, options: { ...family.defaults, [axis]: item.family.options[axis]! }, members: [] }
+      groups.set(key, group)
+      entries.push({ item, variants: 0 }) // garde la place du groupe ; remplacé par son représentant ci-dessous
+    }
+    group.members.push(item)
+  }
+  return entries.flatMap((entry) => {
+    const { family } = entry.item
+    if (!family) return [entry]
+    const group = groups.get(`${family.id}:${family.options[getFamily(family.id)!.axes[0]!.id]}`)!
+    if (!group.members.some(matches)) return []
+    const item = findFamilyVariant(group.familyId, group.options) ?? group.members[0]!
+    return [{ item, variants: group.members.length }]
+  })
+})
 
 /** Mode Scène : objets présents dans la pièce, regroupés par modèle. */
 const sceneList = computed(() => {
@@ -86,15 +118,18 @@ function selectInScene(ids: string[]) {
       <template v-if="mode === 'catalog'">
         <div v-if="catalogList.length" class="grid grid-cols-2 gap-2.5">
           <div
-            v-for="item in catalogList"
+            v-for="{ item, variants } in catalogList"
             :key="item.id"
             draggable="true"
             class="flex cursor-grab flex-col gap-2.5 rounded-desk-xl bg-desk-surface p-2 pb-3 ring-1 ring-desk-line transition-shadow hover:ring-desk-line-strong active:cursor-grabbing"
             :title="`Glisse « ${item.name} » dans la scène, ou clique sur +`"
             @dragstart="onDragStart($event, item)"
           >
-            <span class="block h-[120px] rounded-desk-lg bg-desk-surface-sunken p-3">
+            <span class="relative block h-[120px] rounded-desk-lg bg-desk-surface-sunken p-3">
               <CatalogThumb :item="item" />
+              <span v-if="variants > 1" class="absolute top-2 left-2 rounded-desk-pill bg-desk-surface px-2 py-0.5 text-desk-badge text-desk-ink-soft ring-1 ring-desk-line">
+                {{ variants }} variantes
+              </span>
             </span>
             <span class="flex items-end justify-between gap-2 px-1">
               <span class="flex min-w-0 flex-col gap-0.5">

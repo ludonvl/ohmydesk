@@ -89,4 +89,26 @@ export interface CatalogItem {
   surface?: { height: number }
   anchors?: { name: string; position: Vec3 }[]
   tags: string[]
+  /**
+   * Appartenance à une famille de variantes (voir `CatalogFamily`). Chaque variante reste un objet
+   * du catalogue à part entière, avec son propre `id` : le format de scène ne change pas.
+   */
+  family?: { id: string; options: Record<string, string> }
+}
+
+/**
+ * Famille de variantes d'un même objet (ex. bureaux : plateau × piètement).
+ * Le catalogue affiche une vignette par valeur du premier axe ; l'inspecteur permet de changer chaque axe.
+ */
+export interface CatalogFamily {
+  id: string
+  name: string
+  category: CategorySlug
+  axes: {
+    id: string
+    label: string
+    values: { id: string; label: string }[]
+  }[]
+  /** Options par défaut quand on n'a pas encore choisi (vignette du catalogue). */
+  defaults: Record<string, string>
 }

@@ -1,4 +1,5 @@
-import type { CatalogCategory, CatalogItem, ProceduralPart, Vec3 } from './types'
+import { deskFamily, deskItems } from './families/desks'
+import type { CatalogCategory, CatalogFamily, CatalogItem, ProceduralPart, Vec3 } from './types'
 
 export const catalogCategories: CatalogCategory[] = [
   { slug: 'desks', name: 'Bureaux', description: 'Plans de travail et bureaux' },
@@ -29,32 +30,7 @@ const SHELL = '#FBF8F3'
  * `model` reste en place comme repli et pour les vignettes SVG.
  */
 export const catalogItems: CatalogItem[] = [
-  {
-    id: 'desk-basic',
-    slug: 'bureau-classique',
-    name: 'Bureau classique',
-    category: 'desks',
-    description: 'Plateau 140 × 70 cm sur pieds fins.',
-    dimensions: { width: 1.4, height: 0.75, depth: 0.7 },
-    defaultScale: 1,
-    placement: 'floor',
-    surface: { height: 0.75 },
-    materials: [
-      { slot: 'top', label: 'Plateau', default: SHELL, customizable: true },
-      { slot: 'legs', label: 'Pieds', default: INK, customizable: true },
-    ],
-    model: {
-      type: 'procedural',
-      parts: [
-        box([1.4, 0.04, 0.7], [0, 0.73, 0], 'top', 0.01),
-        box([0.05, 0.71, 0.05], [-0.64, 0.355, -0.29], 'legs'),
-        box([0.05, 0.71, 0.05], [0.64, 0.355, -0.29], 'legs'),
-        box([0.05, 0.71, 0.05], [-0.64, 0.355, 0.29], 'legs'),
-        box([0.05, 0.71, 0.05], [0.64, 0.355, 0.29], 'legs'),
-      ],
-    },
-    tags: ['bureau', 'plateau', 'table'],
-  },
+  ...deskItems,
   {
     id: 'monitor-27',
     slug: 'ecran-27',
@@ -388,6 +364,32 @@ export const catalogById: ReadonlyMap<string, CatalogItem> = new Map(catalogItem
 
 export function getCatalogItem(id: string): CatalogItem | undefined {
   return catalogById.get(id)
+}
+
+export const catalogFamilies: CatalogFamily[] = [deskFamily]
+const familyById: ReadonlyMap<string, CatalogFamily> = new Map(catalogFamilies.map((f) => [f.id, f]))
+
+export function getFamily(id: string | undefined): CatalogFamily | undefined {
+  return id ? familyById.get(id) : undefined
+}
+
+export function getFamilyItems(familyId: string): CatalogItem[] {
+  return catalogItems.filter((item) => item.family?.id === familyId)
+}
+
+/**
+ * Variante d'une famille correspondant le mieux à `options` : correspondance exacte si elle existe,
+ * sinon celle qui partage le plus d'options, en privilégiant les axes listés en premier dans `options`.
+ */
+export function findFamilyVariant(familyId: string, options: Record<string, string>): CatalogItem | undefined {
+  const keys = Object.keys(options)
+  let best: CatalogItem | undefined
+  let bestScore = -1
+  for (const item of getFamilyItems(familyId)) {
+    const score = keys.reduce((n, key, i) => n + (item.family!.options[key] === options[key] ? 2 ** (keys.length - i) : 0), 0)
+    if (score > bestScore) [best, bestScore] = [item, score]
+  }
+  return best
 }
 
 export function getCategoryName(slug: string): string {

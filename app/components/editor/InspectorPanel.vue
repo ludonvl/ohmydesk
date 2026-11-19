@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Copy, Plus, Trash2, X } from 'lucide-vue-next'
-import { getCategoryName } from '#shared/catalog/items'
+import { findFamilyVariant, getCategoryName, getFamily } from '#shared/catalog/items'
 import type { Finish } from '#shared/types/scene'
 import { OBJECT_PALETTE, paletteColorName } from '~/lib/palette'
 import { useEditorStore } from '~/stores/editor'
@@ -21,6 +21,16 @@ const AXES = [
 
 const obj = computed(() => editor.selected)
 const item = computed(() => editor.selectedItem)
+const family = computed(() => getFamily(item.value?.family?.id))
+
+function chooseVariant(axis: string, value: string) {
+  const current = item.value?.family
+  if (!obj.value || !current || current.options[axis] === value) return
+  // L'axe modifié passe en premier : il prime si la combinaison exacte n'existe pas.
+  const target = findFamilyVariant(current.id, { [axis]: value, ...current.options, [axis]: value })
+  if (target) editor.setVariant(obj.value.id, target.id)
+}
+
 const slots = computed(() => item.value?.materials.filter((m) => m.customizable) ?? [])
 
 function slotColor(slot: string) {
@@ -65,6 +75,26 @@ const field =
     </div>
 
     <div class="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 pt-2 pb-6">
+      <template v-if="family && item.family">
+        <div v-for="axis in family.axes" :key="axis.id" class="flex flex-col gap-2.5">
+          <h3 class="desk-overline">{{ axis.label }}</h3>
+          <div role="radiogroup" :aria-label="axis.label" class="flex flex-wrap gap-1.5">
+            <button
+              v-for="value in axis.values"
+              :key="value.id"
+              type="button"
+              role="radio"
+              :aria-checked="item.family.options[axis.id] === value.id"
+              class="h-10 rounded-desk-pill px-4 text-sm font-semibold"
+              :class="item.family.options[axis.id] === value.id ? 'bg-desk-active text-desk-on-active' : 'bg-desk-surface-sunken text-desk-ink-soft hover:text-desk-ink'"
+              @click="chooseVariant(axis.id, value.id)"
+            >
+              {{ value.label }}
+            </button>
+          </div>
+        </div>
+      </template>
+
       <div v-for="slot in slots" :key="slot.slot" class="flex flex-col gap-2.5">
         <div class="flex items-baseline justify-between">
           <h3 class="desk-overline">{{ slot.label }}</h3>

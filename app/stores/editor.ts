@@ -115,6 +115,20 @@ export const useEditorStore = defineStore('editor', () => {
     if (obj && obj.colors[slot] !== color) updateObject(id, { colors: { ...obj.colors, [slot]: color } })
   }
 
+  /** Remplace l'objet par une autre variante de sa famille ; les couleurs choisies sont gardées pour les slots communs. */
+  function setVariant(id: string, catalogId: string) {
+    const obj = findObject(id)
+    const item = getCatalogItem(catalogId)
+    if (!obj || !item || obj.catalogId === catalogId) return
+    const slots = new Set(item.materials.map((m) => m.slot))
+    commit((s) => {
+      const target = s.objects.find((o) => o.id === id)
+      if (!target) return
+      target.catalogId = catalogId
+      target.colors = Object.fromEntries(Object.entries(target.colors).filter(([slot]) => slots.has(slot)))
+    })
+  }
+
   function setFinish(id: string, finish: Finish) {
     updateObject(id, { finish })
   }
@@ -250,7 +264,7 @@ export const useEditorStore = defineStore('editor', () => {
   return {
     setupId, name, slug, description, isPublic, scene, selectedId, saveStatus, showGrid, previewUrl,
     selected, selectedItem, canUndo, canRedo,
-    load, addObject, updateObject, setPosition, rotateObject, setColor, setFinish, removeObject,
+    load, addObject, updateObject, setPosition, rotateObject, setColor, setVariant, setFinish, removeObject,
     duplicateObject, setRoom, setCamera, undo, redo, setMeta, save, setPreviewCapture, flushPreview,
   }
 })
