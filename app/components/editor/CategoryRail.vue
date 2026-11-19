@@ -3,7 +3,7 @@
   suit la hauteur du conteneur parent (unités cqh, parent en `container-type: size`), de 24 à 44px.
 -->
 <script setup lang="ts">
-import { Archive, Armchair, Cpu, House, Keyboard, LampDesk, Monitor, Sparkles, Speaker, Sprout } from 'lucide-vue-next'
+import { Archive, Armchair, Cpu, DoorOpen, Keyboard, LampDesk, Monitor, Sparkles, Speaker, Sprout } from 'lucide-vue-next'
 import type { Component } from 'vue'
 import { catalogCategories } from '#shared/catalog/items'
 import type { CategorySlug } from '#shared/catalog/types'
@@ -42,7 +42,7 @@ const ICONS: Record<CategorySlug, Component> = {
       :aria-pressed="active === 'room'"
       @click="emit('toggle', 'room')"
     >
-      <House class="size-5" :stroke-width="1.8" />
+      <DoorOpen class="size-5" :stroke-width="1.8" />
     </button>
     <span class="mx-auto my-1 h-px w-6 shrink-0 bg-desk-line" aria-hidden="true" />
     <button
