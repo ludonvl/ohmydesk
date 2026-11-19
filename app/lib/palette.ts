@@ -14,3 +14,29 @@ export const OBJECT_PALETTE = [
 export function paletteColorName(hex: string) {
   return OBJECT_PALETTE.find((p) => p.hex.toLowerCase() === hex.toLowerCase())?.name ?? hex.toUpperCase()
 }
+
+/** Couleurs proposées pour les murs (panneau Pièce). */
+export const WALL_PALETTE = [
+  { hex: '#F5F2EC', name: 'Coquille' },
+  { hex: '#EFEBF9', name: 'Lilas pâle' },
+  { hex: '#E3ECE6', name: 'Vert d’eau' },
+  { hex: '#F6E3D4', name: 'Pêche' },
+  { hex: '#DCE6F2', name: 'Bleu brume' },
+  { hex: '#7E9C8F', name: 'Sauge' },
+  { hex: '#C86B4A', name: 'Terracotta' },
+  { hex: '#2D2760', name: 'Nuit' },
+  { hex: '#2E2C3D', name: 'Encre' },
+] as const
+
+/** Couleurs proposées pour le sol : bois, pierre et textiles. */
+export const FLOOR_PALETTE = [
+  { hex: '#E7B98C', name: 'Chêne miel' },
+  { hex: '#DCC39E', name: 'Chêne clair' },
+  { hex: '#B07A52', name: 'Noyer' },
+  { hex: '#6E4A34', name: 'Wengé' },
+  { hex: '#D9D6D0', name: 'Gris perle' },
+  { hex: '#9C9A96', name: 'Béton' },
+  { hex: '#F2EEE6', name: 'Blanc cassé' },
+  { hex: '#3B3175', name: 'Indigo' },
+  { hex: '#2E2C3D', name: 'Encre' },
+] as const

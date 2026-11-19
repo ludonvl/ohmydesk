@@ -1,4 +1,4 @@
-import type { RoomThemeId } from './types/scene'
+import type { FloorType, Room, RoomThemeId } from './types/scene'
 
 export interface RoomTheme {
   id: RoomThemeId
@@ -8,6 +8,8 @@ export interface RoomTheme {
   wall: string
   floor: string
   floorEdge: string
+  /** Revêtement proposé pour une nouvelle pièce dans cette ambiance. */
+  floorType: FloorType
   background: string
   grid: string
   hemiSky: string
@@ -28,6 +30,7 @@ export const roomThemes: Record<RoomThemeId, RoomTheme> = {
     wall: '#EFEBF9',
     floor: '#E7B98C',
     floorEdge: '#C4936A',
+    floorType: 'parquet',
     background: '#EEEBF6',
     grid: '#16151F',
     hemiSky: '#FFFFFF',
@@ -44,6 +47,7 @@ export const roomThemes: Record<RoomThemeId, RoomTheme> = {
     wall: '#2D2760',
     floor: '#3B3175',
     floorEdge: '#251F4F',
+    floorType: 'moquette',
     background: '#1A1733',
     grid: '#FFFFFF',
     hemiSky: '#9C8CFF',
@@ -61,6 +65,7 @@ export const roomThemes: Record<RoomThemeId, RoomTheme> = {
     wall: '#F5F2EC',
     floor: '#DCC39E',
     floorEdge: '#B89C76',
+    floorType: 'chevron',
     background: '#F1ECE3',
     grid: '#16151F',
     hemiSky: '#FFFFFF',
@@ -73,4 +78,21 @@ export const roomThemes: Record<RoomThemeId, RoomTheme> = {
 
 export function getRoomTheme(id: RoomThemeId): RoomTheme {
   return roomThemes[id] ?? roomThemes.studio
+}
+
+/** Assombrit une couleur hexadécimale (`amount` entre 0 et 1). */
+export function darkenHex(hex: string, amount: number): string {
+  const n = Number.parseInt(hex.slice(1, 7), 16)
+  const ch = (v: number) => Math.max(0, Math.min(255, Math.round(v * (1 - amount)))).toString(16).padStart(2, '0')
+  return `#${ch((n >> 16) & 255)}${ch((n >> 8) & 255)}${ch(n & 255)}`
+}
+
+/** Couleurs effectives de la pièce : personnalisées si définies, sinon celles de l'ambiance. */
+export function resolveRoomColors(room: Pick<Room, 'theme' | 'wallColor' | 'floorColor'>) {
+  const theme = getRoomTheme(room.theme)
+  return {
+    wall: room.wallColor ?? theme.wall,
+    floor: room.floorColor ?? theme.floor,
+    floorEdge: room.floorColor ? darkenHex(room.floorColor, 0.18) : theme.floorEdge,
+  }
 }

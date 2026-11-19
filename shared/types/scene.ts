@@ -18,6 +18,10 @@ export const finishIds = ['mat', 'satin', 'gloss'] as const
 export const finishSchema = z.enum(finishIds)
 export type Finish = z.infer<typeof finishSchema>
 
+export const floorTypeIds = ['uni', 'parquet', 'chevron', 'carrelage', 'beton', 'moquette'] as const
+export const floorTypeSchema = z.enum(floorTypeIds)
+export type FloorType = z.infer<typeof floorTypeSchema>
+
 export const sceneObjectSchema = z.object({
   id: z.string().min(1).max(64),
   catalogId: z.string().min(1).max(64),
@@ -37,6 +41,11 @@ export const roomSchema = z.object({
   height: z.number().min(1.8).max(4).default(2.4),
   theme: roomThemeSchema.default('studio'),
   walls: z.boolean().default(true),
+  /** Revêtement du sol. Les scènes antérieures n'en ont pas : sol uni. */
+  floorType: floorTypeSchema.default('uni'),
+  /** Couleurs personnalisées ; absentes = couleurs de l'ambiance (`theme`). */
+  wallColor: hexColorSchema.optional(),
+  floorColor: hexColorSchema.optional(),
 })
 export type Room = z.infer<typeof roomSchema>
 

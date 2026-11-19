@@ -1,5 +1,6 @@
 import type { RoomThemeId, SceneData, SceneObject } from '../types/scene'
 import { SCENE_VERSION } from '../types/scene'
+import { getRoomTheme } from '../themes'
 import { createId } from './ids'
 
 type Spec = Omit<SceneObject, 'id' | 'scale' | 'finish' | 'colors' | 'rotation'> &
@@ -58,7 +59,7 @@ export function createDefaultScene(theme: RoomThemeId = 'studio'): SceneData {
   const colors = themeColors[theme]
   return {
     version: SCENE_VERSION,
-    room: { width: 3, depth: 3, height: 2.4, theme, walls: true },
+    room: { width: 3, depth: 3, height: 2.4, theme, walls: true, floorType: getRoomTheme(theme).floorType },
     camera: { azimuth: 45, zoom: 1 },
     objects: baseLayout.map((spec) => ({
       id: createId('o_'),
@@ -75,7 +76,7 @@ export function createDefaultScene(theme: RoomThemeId = 'studio'): SceneData {
 export function createEmptyScene(theme: RoomThemeId = 'studio'): SceneData {
   return {
     version: SCENE_VERSION,
-    room: { width: 3, depth: 3, height: 2.4, theme, walls: true },
+    room: { width: 3, depth: 3, height: 2.4, theme, walls: true, floorType: getRoomTheme(theme).floorType },
     camera: { azimuth: 45, zoom: 1 },
     objects: [],
   }

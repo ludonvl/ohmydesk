@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { X } from 'lucide-vue-next'
-import { roomThemes } from '#shared/themes'
-import type { Room, RoomThemeId } from '#shared/types/scene'
+import { resolveRoomColors, roomThemes } from '#shared/themes'
+import type { FloorType, Room, RoomThemeId } from '#shared/types/scene'
+import { FLOOR_PALETTE, WALL_PALETTE } from '~/lib/palette'
 import { useEditorStore } from '~/stores/editor'
 
 const emit = defineEmits<{ close: [] }>()
@@ -16,6 +17,24 @@ const DIMS: { key: 'width' | 'depth' | 'height'; label: string; min: number; max
   { key: 'depth', label: 'Profondeur', min: 2, max: 8, step: 0.5 },
   { key: 'height', label: 'Hauteur', min: 2, max: 4, step: 0.1 },
 ]
+
+const colors = computed(() => resolveRoomColors(room.value))
+const paletteName = (palette: readonly { hex: string; name: string }[], hex: string) =>
+  palette.find((c) => c.hex.toLowerCase() === hex.toLowerCase())?.name ?? hex.toUpperCase()
+
+const FLOOR_TYPES: { id: FloorType; label: string }[] = [
+  { id: 'uni', label: 'Uni' },
+  { id: 'parquet', label: 'Parquet' },
+  { id: 'chevron', label: 'Chevron' },
+  { id: 'carrelage', label: 'Carrelage' },
+  { id: 'beton', label: 'Béton ciré' },
+  { id: 'moquette', label: 'Moquette' },
+]
+
+/** Changer d'ambiance repart de ses couleurs de murs et de sol. */
+function setTheme(theme: RoomThemeId) {
+  if (theme !== room.value.theme) editor.setRoom({ theme, wallColor: undefined, floorColor: undefined })
+}
 
 function step(key: 'width' | 'depth' | 'height', delta: number) {
   const d = DIMS.find((x) => x.key === key)!
@@ -76,7 +95,7 @@ function step(key: 'width' | 'depth' | 'height', delta: number) {
             :aria-checked="room.theme === theme.id"
             class="flex items-center gap-3 rounded-desk-md bg-desk-surface p-2.5 text-left"
             :class="room.theme === theme.id ? 'ring-2 ring-desk-active' : 'ring-1 ring-desk-line hover:ring-desk-line-strong'"
-            @click="editor.setRoom({ theme: theme.id as RoomThemeId })"
+            @click="setTheme(theme.id as RoomThemeId)"
           >
             <span class="flex h-8 w-12 shrink-0 overflow-hidden rounded-lg" aria-hidden="true">
               <span class="flex-1" :style="{ background: theme.wall }" />
@@ -89,6 +108,43 @@ function step(key: 'width' | 'depth' | 'height', delta: number) {
             </span>
           </button>
         </div>
+      </div>
+
+      <div class="flex flex-col gap-2.5">
+        <div class="flex items-baseline justify-between gap-3">
+          <h3 class="desk-overline">Murs</h3>
+          <button v-if="room.wallColor" type="button" class="text-desk-caption font-semibold text-desk-ink-soft underline-offset-2 hover:underline" @click="editor.setRoom({ wallColor: undefined })">
+            Couleur de l’ambiance
+          </button>
+          <span v-else class="text-desk-caption text-desk-ink-soft">{{ paletteName(WALL_PALETTE, colors.wall) }}</span>
+        </div>
+        <SwatchPicker label="Couleur des murs" :value="colors.wall" :palette="WALL_PALETTE" @pick="editor.setRoom({ wallColor: $event })" />
+      </div>
+
+      <div class="flex flex-col gap-2.5">
+        <h3 class="desk-overline">Sol</h3>
+        <div role="radiogroup" aria-label="Revêtement du sol" class="grid grid-cols-3 gap-1.5">
+          <button
+            v-for="f in FLOOR_TYPES"
+            :key="f.id"
+            type="button"
+            role="radio"
+            :aria-checked="room.floorType === f.id"
+            class="h-10 rounded-desk-pill px-2 text-sm font-semibold"
+            :class="room.floorType === f.id ? 'bg-desk-active text-desk-on-active' : 'bg-desk-surface-sunken text-desk-ink-soft hover:text-desk-ink'"
+            @click="editor.setRoom({ floorType: f.id })"
+          >
+            {{ f.label }}
+          </button>
+        </div>
+        <div class="flex items-baseline justify-between gap-3 pt-1">
+          <span class="text-desk-caption text-desk-ink-muted">Couleur du sol</span>
+          <button v-if="room.floorColor" type="button" class="text-desk-caption font-semibold text-desk-ink-soft underline-offset-2 hover:underline" @click="editor.setRoom({ floorColor: undefined })">
+            Couleur de l’ambiance
+          </button>
+          <span v-else class="text-desk-caption text-desk-ink-soft">{{ paletteName(FLOOR_PALETTE, colors.floor) }}</span>
+        </div>
+        <SwatchPicker label="Couleur du sol" :value="colors.floor" :palette="FLOOR_PALETTE" @pick="editor.setRoom({ floorColor: $event })" />
       </div>
 
       <div class="flex flex-col gap-1">

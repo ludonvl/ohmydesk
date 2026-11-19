@@ -16,6 +16,8 @@ import {
 } from 'three'
 import type { Room } from '#shared/types/scene'
 import type { RoomTheme } from '#shared/themes'
+import { resolveRoomColors } from '#shared/themes'
+import { createFloorSurface } from './floorTextures'
 
 export const SLAB_THICKNESS = 0.12
 export const WALL_THICKNESS = 0.08
@@ -41,9 +43,16 @@ export class EnvironmentManager {
     this.room = room
     const { width: W, depth: D, height: H } = room
 
-    // Socle : dessus = sol, tranches = couleur plus sombre.
-    const top = new MeshStandardMaterial({ color: theme.floor, roughness: 0.85 })
-    const edge = new MeshStandardMaterial({ color: theme.floorEdge, roughness: 0.9 })
+    const colors = resolveRoomColors(room)
+
+    // Socle : dessus = revêtement du sol, tranches = couleur plus sombre.
+    const surface = createFloorSurface(room.floorType, colors.floor, W, D)
+    const top = new MeshStandardMaterial({
+      color: surface.map ? '#ffffff' : colors.floor,
+      map: surface.map,
+      roughness: surface.roughness,
+    })
+    const edge = new MeshStandardMaterial({ color: colors.floorEdge, roughness: 0.9 })
     const slab = new Mesh(new BoxGeometry(W, SLAB_THICKNESS, D), [edge, edge, top, edge, edge, edge])
     slab.position.y = -SLAB_THICKNESS / 2
     slab.receiveShadow = true
@@ -51,7 +60,7 @@ export class EnvironmentManager {
     this.group.add(slab)
 
     if (room.walls) {
-      const wallMat = new MeshStandardMaterial({ color: theme.wall, roughness: 0.95 })
+      const wallMat = new MeshStandardMaterial({ color: colors.wall, roughness: 0.95 })
       const t = WALL_THICKNESS
       const h = H + SLAB_THICKNESS
       const y = (H - SLAB_THICKNESS) / 2

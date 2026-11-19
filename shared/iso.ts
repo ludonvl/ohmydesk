@@ -1,6 +1,6 @@
 import type { CatalogItem, ProceduralPart } from './catalog/types'
 import type { SceneData } from './types/scene'
-import { getRoomTheme } from './themes'
+import { resolveRoomColors } from './themes'
 
 /**
  * Rendu isométrique 2D (SVG) à partir des boîtes des modèles procéduraux.
@@ -144,15 +144,15 @@ export function catalogItemToIso(item: CatalogItem, overrides?: Record<string, s
 
 /** Aperçu complet d'une scène (pièce + objets procéduraux). */
 export function sceneToIso(scene: SceneData, catalog: ReadonlyMap<string, CatalogItem>): IsoDrawing {
-  const theme = getRoomTheme(scene.room.theme)
+  const colors = resolveRoomColors(scene.room)
   const { width: W, depth: D, height: H, walls } = scene.room
   const t = 0.08
   const boxes: IsoBox[] = [
-    { x0: -W / 2, x1: W / 2, y0: -0.12, y1: 0, z0: -D / 2, z1: D / 2, color: theme.floor, shade: [0.14, 0.28] },
+    { x0: -W / 2, x1: W / 2, y0: -0.12, y1: 0, z0: -D / 2, z1: D / 2, color: colors.floor, shade: [0.14, 0.28] },
   ]
   if (walls) {
-    boxes.push({ x0: -W / 2 - t, x1: -W / 2, y0: -0.12, y1: H, z0: -D / 2 - t, z1: D / 2, color: theme.wall, shade: [0.03, 0.08] })
-    boxes.push({ x0: -W / 2, x1: W / 2, y0: -0.12, y1: H, z0: -D / 2 - t, z1: -D / 2, color: theme.wall, shade: [0.04, 0.08] })
+    boxes.push({ x0: -W / 2 - t, x1: -W / 2, y0: -0.12, y1: H, z0: -D / 2 - t, z1: D / 2, color: colors.wall, shade: [0.03, 0.08] })
+    boxes.push({ x0: -W / 2, x1: W / 2, y0: -0.12, y1: H, z0: -D / 2 - t, z1: -D / 2, color: colors.wall, shade: [0.04, 0.08] })
   }
   for (const obj of scene.objects) {
     const item = catalog.get(obj.catalogId)
