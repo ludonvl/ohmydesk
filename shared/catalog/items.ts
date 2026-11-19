@@ -1,3 +1,4 @@
+import { headphoneFamily, headphoneItems, speakerFamily, speakerItems } from './families/audio'
 import { chairFamily, chairItems } from './families/chairs'
 import { desktopFamily, desktopItems, laptopFamily, laptopItems } from './families/computers'
 import { deskFamily, deskItems } from './families/desks'
@@ -151,29 +152,8 @@ export const catalogItems: CatalogItem[] = [
     },
     tags: ['tasse', 'café', 'mug'],
   },
-  {
-    id: 'speaker',
-    slug: 'enceinte',
-    name: 'Enceinte',
-    category: 'audio',
-    description: 'Enceinte de bureau compacte.',
-    dimensions: { width: 0.14, height: 0.24, depth: 0.15 },
-    defaultScale: 1,
-    placement: 'surface',
-    materials: [
-      { slot: 'body', label: 'Caisson', default: SHELL, customizable: true },
-      { slot: 'cone', label: 'Membrane', default: INK, customizable: true },
-    ],
-    model: {
-      type: 'procedural',
-      parts: [
-        box([0.14, 0.24, 0.15], [0, 0.12, 0], 'body', 0.01),
-        cyl([0.09, 0.006, 0.09], [0, 0.09, 0.076], 'cone', [Math.PI / 2, 0, 0]),
-        cyl([0.035, 0.006, 0.035], [0, 0.18, 0.076], 'cone', [Math.PI / 2, 0, 0]),
-      ],
-    },
-    tags: ['enceinte', 'audio', 'speaker'],
-  },
+  ...speakerItems,
+  ...headphoneItems,
   {
     id: 'shelf-wall',
     slug: 'etagere-murale',
@@ -247,7 +227,7 @@ export function getCatalogItem(id: string): CatalogItem | undefined {
   return catalogById.get(id)
 }
 
-export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, keyboardFamily, mouseFamily, desktopFamily, laptopFamily, chairFamily, neonFamily, posterFamily]
+export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, keyboardFamily, mouseFamily, desktopFamily, laptopFamily, chairFamily, speakerFamily, headphoneFamily, neonFamily, posterFamily]
 const familyById: ReadonlyMap<string, CatalogFamily> = new Map(catalogFamilies.map((f) => [f.id, f]))
 
 export function getFamily(id: string | undefined): CatalogFamily | undefined {
