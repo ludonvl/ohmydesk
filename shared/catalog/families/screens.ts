@@ -1,7 +1,8 @@
 import type { CatalogFamily, CatalogItem, MaterialSlot, ProceduralPart, Vec3 } from '../types'
 
 /**
- * Famille « Écran » : modèle (taille, format, courbure) × pied.
+ * Famille « Écran » : modèle (taille, format, courbure) × orientation × pied.
+ * Seuls les écrans plats existent en portrait : les dalles incurvées restent en paysage.
  * Repère : origine au centre du pied, posé sur la surface ; face avant (dalle) vers +Z.
  * Les dalles incurvées sont découpées en segments tournés autour de Y ; les vignettes isométriques
  * les dessinent sans la rotation, ce qui donne une courbe en escalier discrète.
@@ -10,7 +11,8 @@ import type { CatalogFamily, CatalogItem, MaterialSlot, ProceduralPart, Vec3 } f
 const INK = '#2E2C3D'
 const SHELL = '#F5F2EC'
 
-type ModelId = '24' | '27' | '32' | 'ultrawide' | 'superwide' | 'vertical'
+type ModelId = '24' | '27' | '32' | 'ultrawide' | 'superwide'
+type OrientationId = 'paysage' | 'portrait'
 type StandId = 'central' | 'v' | 'bras'
 
 interface ModelSpec {
@@ -47,10 +49,6 @@ const MODELS: ModelSpec[] = [
     id: 'superwide', label: '49" super-large', name: 'Écran 49" super-large', description: 'Super ultra-large 32:9 incurvé 1000R',
     panel: [1.19, 0.34], curve: 1.0, colors: { frame: INK, screen: '#FF4FD8' }, tags: ['49', 'super ultrawide', 'incurvé', 'gaming'],
   },
-  {
-    id: 'vertical', label: '24" vertical', name: 'Écran 24" vertical', description: 'Moniteur 24 pouces en mode portrait',
-    panel: [0.3, 0.53], colors: { frame: INK, screen: '#4CC9A0' }, tags: ['vertical', 'portrait', 'code', 'lecture'],
-  },
 ]
 
 const STANDS: { id: StandId; label: string; suffix: string; description: string; color?: string }[] = [
@@ -59,15 +57,21 @@ const STANDS: { id: StandId; label: string; suffix: string; description: string;
   { id: 'bras', label: 'Bras', suffix: 'sur bras', description: 'sur bras articulé', color: '#C9C6C0' },
 ]
 
+const ORIENTATIONS: { id: OrientationId; label: string }[] = [
+  { id: 'paysage', label: 'Paysage' },
+  { id: 'portrait', label: 'Portrait' },
+]
+
 export const screenFamily: CatalogFamily = {
   id: 'screen',
   name: 'Écran',
   category: 'screens',
   axes: [
     { id: 'model', label: 'Modèle', values: MODELS.map(({ id, label }) => ({ id, label })) },
+    { id: 'orientation', label: 'Orientation', values: ORIENTATIONS.map(({ id, label }) => ({ id, label })) },
     { id: 'stand', label: 'Pied', values: STANDS.map(({ id, label }) => ({ id, label })) },
   ],
-  defaults: { model: '27', stand: 'central' },
+  defaults: { model: '27', orientation: 'paysage', stand: 'central' },
 }
 
 const BEZEL = 0.012
@@ -167,25 +171,36 @@ function materials(model: ModelSpec, stand: (typeof STANDS)[number]): MaterialSl
   ]
 }
 
-export const screenItems: CatalogItem[] = MODELS.flatMap((model) =>
-  STANDS.map((stand): CatalogItem => {
-    const centerY = LIFT + model.panel[1] / 2 + BEZEL
-    const parts = [...standParts(model, stand.id, centerY), ...panelParts(model, centerY)]
-    // Identifiant historique conservé pour le 27" sur pied central : les scènes existantes y font référence.
-    const isDefault = model.id === '27' && stand.id === 'central'
-    return {
-      id: isDefault ? 'monitor-27' : `monitor-${model.id}-${stand.id}`,
-      slug: isDefault ? 'ecran-27' : `ecran-${model.id}-${stand.id}`,
-      name: stand.suffix ? `${model.name} ${stand.suffix}` : model.name,
-      category: 'screens',
-      description: `${model.description}, ${stand.description}.`,
-      dimensions: extents(parts),
-      defaultScale: 1,
-      placement: 'surface',
-      materials: materials(model, stand),
-      model: { type: 'procedural', parts },
-      tags: ['écran', 'moniteur', 'monitor', ...model.tags],
-      family: { id: screenFamily.id, options: { model: model.id, stand: stand.id } },
-    }
+/** Identifiants publiés avant l'axe Orientation, conservés : des scènes y font référence. */
+function screenId(model: ModelSpec, orientation: OrientationId, stand: StandId) {
+  if (model.id === '27' && orientation === 'paysage' && stand === 'central') return { id: 'monitor-27', slug: 'ecran-27' }
+  if (orientation === 'paysage') return { id: `monitor-${model.id}-${stand}`, slug: `ecran-${model.id}-${stand}` }
+  if (model.id === '24') return { id: `monitor-vertical-${stand}`, slug: `ecran-vertical-${stand}` }
+  return { id: `monitor-${model.id}-portrait-${stand}`, slug: `ecran-${model.id}-portrait-${stand}` }
+}
+
+export const screenItems: CatalogItem[] = MODELS.flatMap((base) =>
+  ORIENTATIONS.filter((o) => o.id === 'paysage' || !base.curve).flatMap((orientation) => {
+    const portrait = orientation.id === 'portrait'
+    // En portrait, la dalle pivote d'un quart de tour : largeur et hauteur s'échangent.
+    const model: ModelSpec = portrait ? { ...base, panel: [base.panel[1], base.panel[0]] } : base
+    return STANDS.map((stand): CatalogItem => {
+      const centerY = LIFT + model.panel[1] / 2 + BEZEL
+      const parts = [...standParts(model, stand.id, centerY), ...panelParts(model, centerY)]
+      const name = portrait ? `${model.name} vertical` : model.name
+      return {
+        ...screenId(model, orientation.id, stand.id),
+        name: stand.suffix ? `${name} ${stand.suffix}` : name,
+        category: 'screens',
+        description: `${model.description}${portrait ? ', en mode portrait' : ''}, ${stand.description}.`,
+        dimensions: extents(parts),
+        defaultScale: 1,
+        placement: 'surface',
+        materials: materials(model, stand),
+        model: { type: 'procedural', parts },
+        tags: ['écran', 'moniteur', 'monitor', ...model.tags, ...(portrait ? ['vertical', 'portrait', 'code', 'lecture'] : [])],
+        family: { id: screenFamily.id, options: { model: model.id, orientation: orientation.id, stand: stand.id } },
+      }
+    })
   }),
 )

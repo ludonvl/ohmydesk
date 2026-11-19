@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Copy, Plus, Trash2, X } from 'lucide-vue-next'
-import { findFamilyVariant, getCategoryName, getFamily } from '#shared/catalog/items'
+import { findFamilyVariant, getCategoryName, getFamily, getFamilyItems } from '#shared/catalog/items'
 import type { Finish } from '#shared/types/scene'
 import { OBJECT_PALETTE, paletteColorName } from '~/lib/palette'
 import { useEditorStore } from '~/stores/editor'
@@ -22,6 +22,17 @@ const AXES = [
 const obj = computed(() => editor.selected)
 const item = computed(() => editor.selectedItem)
 const family = computed(() => getFamily(item.value?.family?.id))
+
+/**
+ * Une valeur est indisponible si aucune variante ne la propose pour le premier axe actuel
+ * (ex. pas d'écran incurvé en portrait). Les valeurs du premier axe restent toujours cliquables.
+ */
+function isAvailable(axis: string, value: string) {
+  const current = item.value?.family
+  const primary = family.value?.axes[0]?.id
+  if (!current || !primary || axis === primary) return true
+  return getFamilyItems(current.id).some((i) => i.family!.options[axis] === value && i.family!.options[primary] === current.options[primary])
+}
 
 function chooseVariant(axis: string, value: string) {
   const current = item.value?.family
@@ -85,8 +96,10 @@ const field =
               type="button"
               role="radio"
               :aria-checked="item.family.options[axis.id] === value.id"
-              class="h-10 rounded-desk-pill px-4 text-sm font-semibold"
-              :class="item.family.options[axis.id] === value.id ? 'bg-desk-active text-desk-on-active' : 'bg-desk-surface-sunken text-desk-ink-soft hover:text-desk-ink'"
+              :disabled="!isAvailable(axis.id, value.id)"
+              :title="isAvailable(axis.id, value.id) ? undefined : `Indisponible pour ce modèle`"
+              class="h-10 rounded-desk-pill px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40"
+              :class="item.family.options[axis.id] === value.id ? 'bg-desk-active text-desk-on-active' : 'bg-desk-surface-sunken text-desk-ink-soft enabled:hover:text-desk-ink'"
               @click="chooseVariant(axis.id, value.id)"
             >
               {{ value.label }}
