@@ -23,8 +23,32 @@ npm run dev              # http://localhost:3000
 | `db:studio` | Explorateur de données Drizzle |
 | `db:seed` | Catalogue et setups de démo (idempotent) |
 
-Tables : `user`, `session`, `account`, `verification` (Better Auth), `setup`, `setup_version` (scène en JSONB), `catalog_category`, `catalog_item`.
+Tables : `user`, `session`, `account`, `verification` (Better Auth), `setup` (dont `preview_url`), `setup_version` (scène en JSONB), `catalog_category`, `catalog_item`.
 Les sauvegardes automatiques rapprochées (moins de 10 min) mettent à jour la même `setup_version` ; au-delà, une nouvelle version est créée.
+
+### Fichiers (Vercel Blob)
+
+Aperçus PNG des setups et modèles GLB du catalogue. `server/utils/storage.ts` choisit le stockage :
+- **Vercel Blob** dès que `BLOB_READ_WRITE_TOKEN` est défini (production, ou en local après `vercel env pull`) ;
+- sinon **disque local** dans `.data/blob`, servi sur `/blob/**` : rien à configurer pour développer.
+
+**Aperçus PNG** : l'éditeur capture la scène (`engine.capture()`, 1200 × 900, pièce entière, sans grille ni sélection)
+5 s après la dernière sauvegarde, et à la sortie de l'éditeur, puis l'envoie à `PUT /api/setups/:id/preview`
+(PNG vérifié : signature, dimensions ≤ 2400 px, 3 Mo max). Chaque aperçu a un nom unique (cache CDN d'un an) ;
+l'ancien est supprimé. Un setup sans aperçu en reçoit un dès son ouverture dans l'éditeur.
+Utilisés par le tableau de bord et comme image de partage (`og:image`) du viewer public ; l'aperçu SVG reste le repli.
+
+**Modèles GLB** : un objet du catalogue peut déclarer `glb: { path: 'models/mug-v1.glb' }`. Le moteur charge
+`<assetsBaseUrl>/<path>` et retombe sur le modèle procédural si le fichier est absent ou invalide.
+`assetsBaseUrl` est déduit du jeton Blob (`https://<store>.public.blob.vercel-storage.com`), sinon `/blob`.
+
+| Script | Rôle |
+|---|---|
+| `models:build` | Génère les GLB de `scripts/build-models.ts` dans `assets/models/` (tasse, succulente) |
+| `assets:upload` | Publie `assets/models/*.glb` sous `models/` (Vercel Blob ou `.data/blob`) |
+
+Conventions d'un GLB : mètres, origine au centre de la base, face avant vers +Z, matériaux personnalisables
+nommés comme leur slot (`body`, `pot`…). Nouvelle version d'un modèle = nouveau nom de fichier (`-v2`).
 
 ### Authentification
 
@@ -112,11 +136,12 @@ server/              API Nitro
 
 - [x] Étape 1 : fondations Nuxt 4, moteur 3D, éditeur, viewer public, viewer embarqué, catalogue procédural
 - [x] Étape 2 : Neon + Drizzle (User, Setup, SetupVersion, CatalogItem, CatalogCategory), Better Auth (email/mot de passe, OAuth Google prêt), routes protégées
-- [ ] Étape 3 : Vercel Blob (GLB, textures, aperçus PNG via `engine.screenshot()`), premiers modèles GLB
+- [x] Étape 3 : Vercel Blob (repli local), aperçus PNG via `engine.capture()`, premiers modèles GLB (tasse, succulente) avec repli procédural. Textures : chargement KTX2 prêt, aucune texture publiée pour l'instant
 - [ ] Étape 4 : galerie publique, profils, likes
 
 ## Déploiement Vercel
 
-Variables à définir dans le projet : `DATABASE_URL` (ajoutée automatiquement par l'intégration Neon), `BETTER_AUTH_SECRET`,
+Variables à définir dans le projet : `DATABASE_URL` (ajoutée automatiquement par l'intégration Neon), `BLOB_READ_WRITE_TOKEN`
+(ajoutée en créant un store Blob dans Vercel → Storage, puis `npm run assets:upload` avec ce jeton pour publier les GLB), `BETTER_AUTH_SECRET`,
 `BETTER_AUTH_URL` (production uniquement : les prévisualisations utilisent `VERCEL_URL`), `NUXT_PUBLIC_SITE_URL`.
 Les migrations ne sont pas lancées au build : `npm run db:migrate` avec la `DATABASE_URL` de production avant de déployer un changement de schéma.

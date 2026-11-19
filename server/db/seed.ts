@@ -58,7 +58,7 @@ async function main() {
       slug: item.slug,
       categoryId: item.category,
       description: item.description,
-      modelUrl: item.model.type === 'gltf' ? item.model.url : null,
+      modelUrl: item.glb?.path ?? (item.model.type === 'gltf' ? item.model.url : null),
       thumbnailUrl: item.thumbnailUrl ?? null,
       defaultProperties: {
         scale: item.defaultScale,

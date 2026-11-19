@@ -1,5 +1,14 @@
 import tailwindcss from '@tailwindcss/vite'
 
+/**
+ * URL publique du store Vercel Blob, déduite du jeton (`vercel_blob_rw_<storeId>_<secret>`).
+ * Sans jeton, les fichiers sont servis par l'app elle-même depuis `.data/blob` (route `/blob/**`).
+ */
+function blobPublicBaseUrl(): string | undefined {
+  const storeId = process.env.BLOB_READ_WRITE_TOKEN?.split('_')[3]
+  return storeId ? `https://${storeId.toLowerCase()}.public.blob.vercel-storage.com` : undefined
+}
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
@@ -43,6 +52,8 @@ export default defineNuxtConfig({
       // Origines autorisées à piloter le viewer embarqué via postMessage (séparées par des virgules).
       // Surcharge : NUXT_PUBLIC_EMBED_ALLOWED_ORIGINS="https://monsite.fr,https://blog.monsite.fr"
       embedAllowedOrigins: '',
+      // Racine des modèles GLB publiés. Surcharge possible : NUXT_PUBLIC_ASSETS_BASE_URL
+      assetsBaseUrl: blobPublicBaseUrl() ?? '/blob',
       // Bouton « Continuer avec Google » : affiché dès que les identifiants OAuth sont configurés.
       googleAuth: Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
     },
@@ -66,7 +77,16 @@ export default defineNuxtConfig({
   vite: {
     plugins: [tailwindcss()],
     optimizeDeps: {
-      include: ['three'],
+      // Les chargeurs GLB sont importés à la demande : sans pré-optimisation, Vite les découvre au premier GLB,
+      // relance l'optimisation (504 « Outdated Optimize Dep ») et crée une seconde instance de Three.js.
+      include: [
+        'three',
+        'three/addons/geometries/RoundedBoxGeometry.js',
+        'three/addons/loaders/GLTFLoader.js',
+        'three/addons/loaders/DRACOLoader.js',
+        'three/addons/loaders/KTX2Loader.js',
+        'three/addons/libs/meshopt_decoder.module.js',
+      ],
     },
   },
 

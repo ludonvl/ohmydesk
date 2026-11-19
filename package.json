@@ -14,12 +14,15 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "tsx --env-file=.env server/db/seed.ts",
-    "auth:secret": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\""
+    "auth:secret": "node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
+    "models:build": "tsx scripts/build-models.ts",
+    "assets:upload": "tsx --env-file=.env scripts/upload-assets.ts"
   },
   "dependencies": {
     "@better-auth/drizzle-adapter": "^1.7.18",
     "@neondatabase/serverless": "^1.2.1",
     "@pinia/nuxt": "^0.11.2",
+    "@vercel/blob": "^2.9.0",
     "better-auth": "^1.7.18",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

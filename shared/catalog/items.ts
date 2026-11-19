@@ -24,8 +24,9 @@ const INK = '#2E2C3D'
 const SHELL = '#FBF8F3'
 
 /**
- * Catalogue initial : modèles procéduraux stylisés (boîtes arrondies et cylindres),
- * en attendant les GLB définitifs. Le jour où un GLB est prêt, il suffit de remplacer `model`.
+ * Catalogue : modèles procéduraux stylisés (boîtes arrondies et cylindres) en attendant les GLB définitifs.
+ * Quand un GLB est publié (scripts/build-models.ts → npm run assets:upload), on ajoute `glb` à l'objet ;
+ * `model` reste en place comme repli et pour les vignettes SVG.
  */
 export const catalogItems: CatalogItem[] = [
   {
@@ -218,6 +219,7 @@ export const catalogItems: CatalogItem[] = [
       { slot: 'pot', label: 'Pot', default: '#E3A587', customizable: true },
       { slot: 'leaves', label: 'Feuillage', default: '#5E8C61', customizable: true, roughness: 0.8 },
     ],
+    glb: { path: 'models/succulent-v1.glb' },
     model: {
       type: 'procedural',
       parts: [
@@ -259,6 +261,7 @@ export const catalogItems: CatalogItem[] = [
     defaultScale: 1,
     placement: 'surface',
     materials: [{ slot: 'body', label: 'Tasse', default: '#4CC9A0', customizable: true }],
+    glb: { path: 'models/mug-v1.glb' },
     model: {
       type: 'procedural',
       parts: [

@@ -26,6 +26,8 @@ export interface EngineOptions {
   zoom: boolean
   /** Grille d'aide au sol (éditeur). */
   grid: boolean
+  /** Racine des fichiers publiés (modèles GLB) : URL du store Vercel Blob, ou `/blob` en local. */
+  assetBaseUrl: string
 }
 
 export type EngineEvents = {
@@ -43,6 +45,7 @@ const DEFAULTS: EngineOptions = {
   controls: true,
   zoom: true,
   grid: false,
+  assetBaseUrl: '/blob',
 }
 
 /**
@@ -73,7 +76,7 @@ export class Engine {
     const render = () => this.sceneManager.requestRender()
 
     this.lighting = new LightingManager(this.sceneManager.scene)
-    this.assets = new AssetManager(this.sceneManager.renderer)
+    this.assets = new AssetManager(this.sceneManager.renderer, this.options.assetBaseUrl)
     this.objects = new ObjectManager(this.assets, catalog, render)
     this.selection = new SelectionManager(this.sceneManager.scene, this.objects)
     this.sceneManager.world.add(this.env.group, this.objects.root)
@@ -170,10 +173,45 @@ export class Engine {
     return { position: [p.x, p.y, p.z], rotation: placement.rotation }
   }
 
-  /** Capture PNG de la vue courante (aperçus, partage). */
+  /** Capture PNG de la vue courante, à la taille du canvas. */
   screenshot(): string {
     this.sceneManager.renderNow()
     return this.sceneManager.canvas.toDataURL('image/png')
+  }
+
+  /**
+   * Aperçu PNG à taille fixe (vignettes, images de partage), indépendant de la taille de l'écran :
+   * la caméra garde son angle mais montre toute la pièce (zoom 1 par défaut), sans grille ni sélection.
+   * Le rendu et la copie du canvas sont synchrones ; seul l'encodage PNG est asynchrone.
+   */
+  capture({ width = 1200, height = 900, zoom = 1 }: { width?: number; height?: number; zoom?: number } = {}): Promise<Blob> {
+    const renderer = this.sceneManager.renderer
+    const { width: w0, height: h0 } = this.sceneManager.size
+    const pixelRatio = renderer.getPixelRatio()
+    const selected = this.selection.selectedId
+    const camera = this.cameraManager.saveState()
+
+    this.cameraManager.setState(camera.azimuth, zoom)
+    this.env.setGridVisible(false)
+    this.selection.select(null)
+    renderer.setPixelRatio(1)
+    renderer.setSize(width, height, false)
+    this.cameraManager.setSize(width, height)
+    this.sceneManager.renderNow()
+
+    const blob = new Promise<Blob>((resolve, reject) => {
+      renderer.domElement.toBlob((b) => (b ? resolve(b) : reject(new Error('Capture PNG impossible'))), 'image/png')
+    })
+
+    renderer.setPixelRatio(pixelRatio)
+    renderer.setSize(w0, h0, false)
+    this.cameraManager.setSize(w0, h0)
+    this.cameraManager.restoreState(camera)
+    this.env.setGridVisible(this.options.grid)
+    this.selection.select(selected)
+    // Redessine tout de suite : le redimensionnement a vidé le canvas, on évite une image vide à l'écran.
+    this.sceneManager.renderNow()
+    return blob
   }
 
   private applyRoom(room: Room, force = false) {

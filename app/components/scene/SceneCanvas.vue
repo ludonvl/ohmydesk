@@ -30,13 +30,14 @@ const loading = ref(true)
 const failed = ref(false)
 
 const clone = (scene: SceneData): SceneData => JSON.parse(JSON.stringify(scene))
+const { assetsBaseUrl } = useRuntimeConfig().public
 
 onMounted(async () => {
   if (!container.value) return
   try {
     const { Engine } = await import('~/engine')
     if (!container.value) return
-    const instance = new Engine(container.value, catalogById, { ...props.options })
+    const instance = new Engine(container.value, catalogById, { assetBaseUrl: assetsBaseUrl, ...props.options })
     instance.events.on('select', (id) => emit('select', id))
     instance.events.on('objectclick', (id) => emit('objectClick', id))
     instance.events.on('transformend', (payload) => emit('transformEnd', payload))
@@ -83,6 +84,8 @@ defineExpose({
   getCameraState: () => engine.value?.getCameraState(),
   getDropPlacement: (x: number, y: number, catalogId: string) => engine.value?.getDropPlacement(x, y, catalogId) ?? null,
   screenshot: () => engine.value?.screenshot(),
+  /** Aperçu PNG à taille fixe ; null tant que le moteur n'est pas prêt. */
+  capture: (size?: { width?: number; height?: number }) => (engine.value && !loading.value ? engine.value.capture(size) : null),
 })
 </script>
 

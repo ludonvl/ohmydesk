@@ -13,6 +13,7 @@ interface CanvasApi {
   resetCamera: () => void
   getCameraState: () => { azimuth: number; zoom: number } | undefined
   getDropPlacement: (x: number, y: number, catalogId: string) => { position: [number, number, number]; rotation?: number } | null
+  capture: () => Promise<Blob> | null
 }
 
 const route = useRoute()
@@ -111,9 +112,18 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 onMounted(() => window.addEventListener('keydown', onKeydown))
+function onCanvasReady() {
+  editor.setPreviewCapture(() => canvas.value?.capture() ?? null)
+}
+
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
-  if (editor.saveStatus === 'saving') editor.save()
+  // La page est démontée avant le canvas : le moteur peut encore faire la capture.
+  // Une modification non encore sauvegardée : on sauvegarde et on capture l'aperçu maintenant.
+  const unsaved = editor.saveStatus === 'saving'
+  if (unsaved) editor.save()
+  editor.flushPreview(unsaved)
+  editor.setPreviewCapture(null)
 })
 </script>
 
@@ -151,6 +161,7 @@ onBeforeUnmount(() => {
           label="Scène 3D en cours d’édition"
           @select="editor.selectedId = $event"
           @transform-end="onTransformEnd"
+          @ready="onCanvasReady"
         >
           <template #loading>
             <div class="h-[70%] w-[70%] opacity-60">

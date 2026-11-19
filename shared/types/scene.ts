@@ -63,6 +63,8 @@ export interface SetupSummary {
   description: string
   isPublic: boolean
   authorName: string
+  /** Aperçu PNG (URL absolue Vercel Blob, ou `/blob/…` en développement local). */
+  previewUrl: string | null
   publishedAt: string | null
   createdAt: string
   updatedAt: string

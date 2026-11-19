@@ -3,6 +3,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import type { SceneData, SetupUpdate, SetupWithScene } from '#shared/types/scene'
 import { createId, slugify } from '#shared/utils/ids'
 import { schema, useDb } from '../db/client'
+import { deleteFile, putFile } from './storage'
 
 const { setup, setupVersion, user } = schema
 
@@ -40,6 +41,7 @@ function toRecord(s: typeof setup.$inferSelect, authorName: string, scene: Scene
     description: s.description,
     isPublic: s.isPublic,
     authorName,
+    previewUrl: s.previewUrl,
     publishedAt: iso(s.publishedAt),
     createdAt: s.createdAt.toISOString(),
     updatedAt: s.updatedAt.toISOString(),
@@ -129,8 +131,24 @@ export async function updateSetup(current: SetupRecord, patch: SetupUpdate): Pro
   return updated
 }
 
-export async function deleteSetup(id: string) {
-  await useDb().delete(setup).where(eq(setup.id, id))
+export async function deleteSetup(record: SetupRecord) {
+  await useDb().delete(setup).where(eq(setup.id, record.id))
+  await deleteFile(record.previewUrl)
+}
+
+/** Remplace l'aperçu PNG du setup (sans toucher à sa date de modification). */
+export async function replacePreview(record: SetupRecord, png: Buffer): Promise<string> {
+  // Nom unique à chaque aperçu : le fichier peut être mis en cache indéfiniment par le CDN.
+  const file = await putFile(`previews/${record.id}/${createId()}.png`, png, {
+    contentType: 'image/png',
+    cacheControlMaxAge: 60 * 60 * 24 * 365,
+  })
+  await useDb()
+    .update(setup)
+    .set({ previewUrl: file.url, updatedAt: new Date(record.updatedAt) })
+    .where(eq(setup.id, record.id))
+  if (record.previewUrl !== file.url) await deleteFile(record.previewUrl)
+  return file.url
 }
 
 /** Setup appartenant à l'utilisateur, sinon 404 (on ne révèle pas l'existence d'un setup d'autrui). */

@@ -1,0 +1,1 @@
+ALTER TABLE "setup" ADD COLUMN "preview_url" text;

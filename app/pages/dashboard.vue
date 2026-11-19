@@ -72,8 +72,23 @@ const templates = Object.values(roomThemes).map((t) => ({ id: t.id as RoomThemeI
 
     <ul v-else class="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
       <li v-for="s in setups" :key="s.id" class="flex flex-col overflow-hidden rounded-3xl border border-line bg-white">
-        <NuxtLink :to="`/editor/${s.id}`" class="block aspect-[4/3] bg-lilac p-4" :aria-label="`Ouvrir ${s.name} dans l’éditeur`">
-          <IsoPreview :scene="s.scene" :label="`Aperçu de ${s.name}`" />
+        <NuxtLink
+          :to="`/editor/${s.id}`"
+          class="block aspect-[4/3] overflow-hidden bg-lilac"
+          :class="s.previewUrl ? '' : 'p-4'"
+          :aria-label="`Ouvrir ${s.name} dans l’éditeur`"
+        >
+          <img
+            v-if="s.previewUrl"
+            :src="s.previewUrl"
+            :alt="`Aperçu de ${s.name}`"
+            width="1200"
+            height="900"
+            loading="lazy"
+            decoding="async"
+            class="h-full w-full object-cover"
+          >
+          <IsoPreview v-else :scene="s.scene" :label="`Aperçu de ${s.name}`" />
         </NuxtLink>
         <div class="flex flex-1 flex-col gap-3 p-5">
           <div class="flex items-start justify-between gap-3">

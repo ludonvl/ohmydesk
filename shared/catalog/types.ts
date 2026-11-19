@@ -69,6 +69,16 @@ export interface CatalogItem {
   category: CategorySlug
   description: string
   model: ModelSource
+  /**
+   * Modèle GLB publié dans le stockage (Vercel Blob), chemin relatif à `assetsBaseUrl`, ex. `models/mug-v1.glb`.
+   * Prioritaire sur `model`, qui reste le repli : GLB pas encore publié ou en échec, vignettes SVG (shared/iso.ts).
+   * Publication : `npm run models:build` puis `npm run assets:upload`.
+   */
+  glb?: {
+    path: string
+    /** Correspondance slot → noms de matériaux du GLB. Par défaut : matériau nommé comme le slot. */
+    slotMaterials?: Record<string, string[]>
+  }
   thumbnailUrl?: string
   /** Dimensions en mètres (avant mise à l'échelle). */
   dimensions: { width: number; height: number; depth: number }

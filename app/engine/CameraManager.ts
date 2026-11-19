@@ -52,6 +52,17 @@ export class CameraManager {
     this.updateProjection()
   }
 
+  /** État brut, animations comprises (captures d'écran, voir Engine.capture). */
+  saveState() {
+    return { azimuth: this.azimuth, targetAzimuth: this.targetAzimuth, zoom: this.zoom, targetZoom: this.targetZoom }
+  }
+
+  restoreState(state: ReturnType<CameraManager['saveState']>) {
+    Object.assign(this, state)
+    this.place()
+    this.updateProjection()
+  }
+
   getState() {
     return { azimuth: ((Math.round(this.azimuth) % 360) + 360) % 360, zoom: Math.round(this.zoom * 100) / 100 }
   }

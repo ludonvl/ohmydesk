@@ -17,15 +17,35 @@ export class AssetManager {
   private geometries = new Map<string, BufferGeometry>()
   private gltfCache = new Map<string, Promise<GLTF>>()
   private loader: Promise<GLTFLoader> | null = null
+  private failedGlb = new Set<string>()
 
-  constructor(private renderer: WebGLRenderer) {}
+  /** @param assetBaseUrl Racine des fichiers publiés (Vercel Blob, ou `/blob` en développement local). */
+  constructor(private renderer: WebGLRenderer, private assetBaseUrl = '/blob') {}
 
   async instantiate(item: CatalogItem): Promise<Group> {
+    if (item.glb) {
+      const url = this.resolveAsset(item.glb.path)
+      try {
+        return await this.buildGltf(item, url, item.glb.slotMaterials)
+      } catch (error) {
+        // GLB absent ou invalide : on garde le modèle procédural, l'objet reste utilisable.
+        if (!this.failedGlb.has(url)) console.warn(`[AssetManager] GLB indisponible pour ${item.id}, repli procédural`, error)
+        this.failedGlb.add(url)
+      }
+    }
     if (item.model.type === 'procedural') return this.buildProcedural(item, item.model.parts)
-    const gltf = await this.loadGltf(item.model.url)
+    return this.buildGltf(item, item.model.url, item.model.slotMaterials)
+  }
+
+  private resolveAsset(path: string): string {
+    if (/^https?:\/\//.test(path)) return path
+    return `${this.assetBaseUrl.replace(/\/+$/, '')}/${path.replace(/^\/+/, '')}`
+  }
+
+  private async buildGltf(item: CatalogItem, url: string, slotMaterials?: Record<string, string[]>): Promise<Group> {
+    const gltf = await this.loadGltf(url)
     const root = new Group()
     const model = gltf.scene.clone(true)
-    const slotMaterials = item.model.slotMaterials
     model.traverse((obj) => {
       const mesh = obj as Mesh
       if (!mesh.isMesh) return

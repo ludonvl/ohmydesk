@@ -132,6 +132,8 @@ export const setup = pgTable(
     isPublic: boolean('is_public').notNull().default(false),
     /** Numéro de la SetupVersion courante. */
     currentVersion: integer('current_version').notNull().default(1),
+    /** Aperçu PNG de la scène (Vercel Blob), régénéré par l'éditeur après les modifications. */
+    previewUrl: text('preview_url'),
     publishedAt: timestamp('published_at', { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

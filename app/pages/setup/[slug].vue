@@ -20,11 +20,23 @@ const config = useRuntimeConfig()
 const requestUrl = useRequestURL()
 const origin = computed(() => (import.meta.client ? window.location.origin : requestUrl.origin || config.public.siteUrl))
 
+// Les réseaux sociaux exigent une URL absolue (le stockage local de développement renvoie un chemin `/blob/…`).
+const ogImage = computed(() => {
+  const url = setup.value?.previewUrl
+  if (!url) return undefined
+  return url.startsWith('/') ? `${requestUrl.origin || config.public.siteUrl}${url}` : url
+})
+
 useSeoMeta({
   title: () => `${setup.value?.name} · Oh My Desk`,
   description: () => setup.value?.description || 'Un setup de bureau en 3D isométrique.',
   ogTitle: () => setup.value?.name,
   ogDescription: () => setup.value?.description,
+  ogImage,
+  ogImageWidth: () => (ogImage.value ? 1200 : undefined),
+  ogImageHeight: () => (ogImage.value ? 900 : undefined),
+  ogImageAlt: () => (ogImage.value ? `Aperçu 3D du setup ${setup.value?.name}` : undefined),
+  twitterCard: () => (ogImage.value ? 'summary_large_image' : 'summary'),
 })
 
 const canvas = ref<CanvasApi | null>(null)
