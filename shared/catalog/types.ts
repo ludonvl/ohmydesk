@@ -58,6 +58,8 @@ export interface MaterialSlot {
   emissive?: number
   roughness?: number
   metalness?: number
+  /** Opacité (verre de vitrine) : < 1 rend le slot transparent ; absent des vignettes isométriques sous 0,5. */
+  opacity?: number
 }
 
 /** floor : posé au sol · surface : posé sur un objet support (bureau, étagère) ou au sol · wall : accroché à un mur */

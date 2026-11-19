@@ -6,6 +6,7 @@ import { neonFamily, neonItems } from './families/neons'
 import { keyboardFamily, keyboardItems, mouseFamily, mouseItems } from './families/peripherals'
 import { posterFamily, posterItems } from './families/posters'
 import { screenFamily, screenItems } from './families/screens'
+import { cubeShelfFamily, cubeShelfItems, furnitureFamily, furnitureItems, vitrineFamily, vitrineItems } from './families/storage'
 import type { CatalogCategory, CatalogFamily, CatalogItem, ProceduralPart, Vec3 } from './types'
 
 export const catalogCategories: CatalogCategory[] = [
@@ -182,6 +183,9 @@ export const catalogItems: CatalogItem[] = [
     },
     tags: ['étagère', 'livres', 'rangement'],
   },
+  ...cubeShelfItems,
+  ...furnitureItems,
+  ...vitrineItems,
   ...posterItems,
   {
     id: 'rug',
@@ -227,7 +231,7 @@ export function getCatalogItem(id: string): CatalogItem | undefined {
   return catalogById.get(id)
 }
 
-export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, keyboardFamily, mouseFamily, desktopFamily, laptopFamily, chairFamily, speakerFamily, headphoneFamily, neonFamily, posterFamily]
+export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, keyboardFamily, mouseFamily, desktopFamily, laptopFamily, chairFamily, speakerFamily, headphoneFamily, cubeShelfFamily, furnitureFamily, vitrineFamily, neonFamily, posterFamily]
 const familyById: ReadonlyMap<string, CatalogFamily> = new Map(catalogFamilies.map((f) => [f.id, f]))
 
 export function getFamily(id: string | undefined): CatalogFamily | undefined {

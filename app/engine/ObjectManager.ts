@@ -136,6 +136,12 @@ export class ObjectManager {
       } else if (color) material.color.set(color)
       material.roughness = def?.roughness ?? roughness
       material.metalness = def?.metalness ?? 0
+      if (def?.opacity !== undefined && def.opacity < 1) {
+        material.transparent = true
+        material.opacity = def.opacity
+        material.depthWrite = false
+        mesh.castShadow = false
+      }
       if (def?.emissive) {
         material.emissive.set(color ?? '#ffffff')
         material.emissiveIntensity = def.emissive

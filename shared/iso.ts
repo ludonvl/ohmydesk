@@ -163,10 +163,15 @@ function slotColor(item: CatalogItem, slot: string, overrides?: Record<string, s
   return overrides?.[slot] ?? item.materials.find((m) => m.slot === slot)?.default ?? '#888888'
 }
 
+/** Vitres : non dessinées, sinon elles masqueraient le contenu (les vignettes n'ont pas de transparence). */
+function isGlass(item: CatalogItem, slot: string): boolean {
+  return (item.materials.find((m) => m.slot === slot)?.opacity ?? 1) < 0.5
+}
+
 /** Vignette d'un objet du catalogue. */
 export function catalogItemToIso(item: CatalogItem, overrides?: Record<string, string>): IsoDrawing {
   if (item.model.type !== 'procedural') return { viewBox: '0 0 10 10', polygons: [] }
-  const boxes = item.model.parts.flatMap((p) => partToBoxes(p, slotColor(item, p.slot, overrides)))
+  const boxes = item.model.parts.filter((p) => !isGlass(item, p.slot)).flatMap((p) => partToBoxes(p, slotColor(item, p.slot, overrides)))
   const size = Math.max(item.dimensions.width, item.dimensions.height, item.dimensions.depth)
   return draw(boxes, size * 8)
 }
@@ -188,6 +193,7 @@ export function sceneToIso(scene: SceneData, catalog: ReadonlyMap<string, Catalo
     if (!item || item.model.type !== 'procedural') continue
     if (!walls && item.placement === 'wall') continue
     for (const part of item.model.parts) {
+      if (isGlass(item, part.slot)) continue
       boxes.push(...partToBoxes(part, slotColor(item, part.slot, obj.colors), obj.position, obj.rotation, obj.scale))
     }
   }

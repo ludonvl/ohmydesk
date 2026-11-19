@@ -1,4 +1,5 @@
 import { MathUtils, Plane, Raycaster, Vector2, Vector3 } from 'three'
+import type { Material, Mesh } from 'three'
 import type { CatalogItem } from '#shared/catalog/types'
 import type { Room } from '#shared/types/scene'
 import type { CameraManager } from './CameraManager'
@@ -97,6 +98,8 @@ export class InteractionManager {
       const hits = this.raycaster.intersectObjects(this.ctx.objects.surfaceTargets(excludeId), true)
       for (const hit of hits) {
         if (!hit.face) continue
+        // Le verre (vitrines) laisse passer : on pose sur l'étagère derrière, pas sur la vitre.
+        if (((hit.object as Mesh).material as Material | undefined)?.transparent) continue
         const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld)
         if (normal.y > 0.7) {
           const p = hit.point.clone()
