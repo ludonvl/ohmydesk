@@ -1,3 +1,4 @@
+import { desktopFamily, desktopItems, laptopFamily, laptopItems } from './families/computers'
 import { deskFamily, deskItems } from './families/desks'
 import { neonFamily, neonItems } from './families/neons'
 import { posterFamily, posterItems } from './families/posters'
@@ -186,28 +187,8 @@ export const catalogItems: CatalogItem[] = [
     },
     tags: ['plante', 'succulente', 'cactus'],
   },
-  {
-    id: 'pc-tower',
-    slug: 'tour-pc',
-    name: 'Tour PC',
-    category: 'computers',
-    description: 'Boîtier moyen tour avec panneau lumineux.',
-    dimensions: { width: 0.22, height: 0.46, depth: 0.44 },
-    defaultScale: 1,
-    placement: 'floor',
-    materials: [
-      { slot: 'case', label: 'Boîtier', default: INK, customizable: true },
-      { slot: 'glow', label: 'Éclairage', default: '#5EE6B5', customizable: true, emissive: 1.1 },
-    ],
-    model: {
-      type: 'procedural',
-      parts: [
-        box([0.22, 0.46, 0.44], [0, 0.23, 0], 'case', 0.01),
-        box([0.004, 0.34, 0.32], [0.111, 0.25, 0], 'glow'),
-      ],
-    },
-    tags: ['pc', 'ordinateur', 'tour', 'gaming'],
-  },
+  ...desktopItems,
+  ...laptopItems,
   {
     id: 'mug',
     slug: 'tasse',
@@ -324,7 +305,7 @@ export function getCatalogItem(id: string): CatalogItem | undefined {
   return catalogById.get(id)
 }
 
-export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, neonFamily, posterFamily]
+export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, desktopFamily, laptopFamily, neonFamily, posterFamily]
 const familyById: ReadonlyMap<string, CatalogFamily> = new Map(catalogFamilies.map((f) => [f.id, f]))
 
 export function getFamily(id: string | undefined): CatalogFamily | undefined {
