@@ -2,6 +2,7 @@ import { chairFamily, chairItems } from './families/chairs'
 import { desktopFamily, desktopItems, laptopFamily, laptopItems } from './families/computers'
 import { deskFamily, deskItems } from './families/desks'
 import { neonFamily, neonItems } from './families/neons'
+import { keyboardFamily, keyboardItems, mouseFamily, mouseItems } from './families/peripherals'
 import { posterFamily, posterItems } from './families/posters'
 import { screenFamily, screenItems } from './families/screens'
 import type { CatalogCategory, CatalogFamily, CatalogItem, ProceduralPart, Vec3 } from './types'
@@ -37,43 +38,8 @@ const SHELL = '#FBF8F3'
 export const catalogItems: CatalogItem[] = [
   ...deskItems,
   ...screenItems,
-  {
-    id: 'keyboard-75',
-    slug: 'clavier-75',
-    name: 'Clavier 75 %',
-    category: 'peripherals',
-    description: 'Clavier mécanique compact.',
-    dimensions: { width: 0.32, height: 0.035, depth: 0.12 },
-    defaultScale: 1,
-    placement: 'surface',
-    materials: [
-      { slot: 'body', label: 'Boîtier', default: '#E9E5DD', customizable: true },
-      { slot: 'keys', label: 'Touches', default: SHELL, customizable: true },
-      { slot: 'accent', label: 'Touche accent', default: '#FF6B35', customizable: true },
-    ],
-    model: {
-      type: 'procedural',
-      parts: [
-        box([0.32, 0.025, 0.12], [0, 0.0125, 0], 'body', 0.006),
-        box([0.3, 0.006, 0.1], [0, 0.028, 0], 'keys'),
-        box([0.035, 0.008, 0.03], [0.12, 0.032, 0.03], 'accent'),
-      ],
-    },
-    tags: ['clavier', 'keyboard', 'mécanique'],
-  },
-  {
-    id: 'mouse',
-    slug: 'souris',
-    name: 'Souris',
-    category: 'peripherals',
-    description: 'Souris ergonomique.',
-    dimensions: { width: 0.06, height: 0.03, depth: 0.1 },
-    defaultScale: 1,
-    placement: 'surface',
-    materials: [{ slot: 'body', label: 'Coque', default: SHELL, customizable: true }],
-    model: { type: 'procedural', parts: [box([0.06, 0.03, 0.1], [0, 0.015, 0], 'body', 0.012)] },
-    tags: ['souris', 'mouse'],
-  },
+  ...keyboardItems,
+  ...mouseItems,
   {
     id: 'desk-mat',
     slug: 'tapis-de-bureau',
@@ -281,7 +247,7 @@ export function getCatalogItem(id: string): CatalogItem | undefined {
   return catalogById.get(id)
 }
 
-export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, desktopFamily, laptopFamily, chairFamily, neonFamily, posterFamily]
+export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, keyboardFamily, mouseFamily, desktopFamily, laptopFamily, chairFamily, neonFamily, posterFamily]
 const familyById: ReadonlyMap<string, CatalogFamily> = new Map(catalogFamilies.map((f) => [f.id, f]))
 
 export function getFamily(id: string | undefined): CatalogFamily | undefined {
