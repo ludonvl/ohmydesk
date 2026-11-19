@@ -1,8 +1,9 @@
 import type { Material, Object3D } from 'three'
-import { Group, MathUtils, Mesh, MeshStandardMaterial } from 'three'
+import { Group, MathUtils, Mesh, MeshStandardMaterial, PointLight } from 'three'
 import type { CatalogItem } from '#shared/catalog/types'
 import type { Finish, SceneObject } from '#shared/types/scene'
 import type { AssetManager } from './AssetManager'
+import { createPosterTexture } from './posterArt'
 
 const FINISH_ROUGHNESS: Record<Finish, number> = { mat: 0.9, satin: 0.55, gloss: 0.22 }
 
@@ -96,6 +97,13 @@ export class ObjectManager {
         return
       }
       group.add(model)
+      if (item.light) {
+        // Halo d'un néon : éclaire le mur et le bureau autour de lui, sans ombre portée (coûteuse).
+        const light = new PointLight('#ffffff', item.light.intensity, item.light.distance, 2)
+        light.position.set(...item.light.position)
+        light.userData.lightSlot = item.light.slot
+        model.add(light)
+      }
       inst.loaded = true
       this.apply(inst)
     } catch (error) {
@@ -109,7 +117,13 @@ export class ObjectManager {
     group.rotation.y = MathUtils.degToRad(data.rotation)
     group.scale.setScalar(data.scale * item.defaultScale)
     const roughness = FINISH_ROUGHNESS[data.finish] ?? 0.55
+    const colorOf = (slot: string) => data.colors[slot] ?? item.materials.find((m) => m.slot === slot)?.default
     group.traverse((obj) => {
+      if (obj instanceof PointLight) {
+        const color = colorOf(obj.userData.lightSlot as string)
+        if (color) obj.color.set(color)
+        return
+      }
       const mesh = obj as Mesh
       if (!mesh.isMesh) return
       const slot = mesh.userData.slot as string | undefined
@@ -117,7 +131,9 @@ export class ObjectManager {
       if (!slot || !(material instanceof MeshStandardMaterial)) return
       const def = item.materials.find((m) => m.slot === slot)
       const color = data.colors[slot] ?? def?.default
-      if (color) material.color.set(color)
+      if (mesh.userData.art) {
+        paintArt(mesh, material, { bg: color ?? '#ffffff', a: colorOf('accent') ?? '#000000', b: colorOf('accent2') ?? '#000000' })
+      } else if (color) material.color.set(color)
       material.roughness = def?.roughness ?? roughness
       material.metalness = def?.metalness ?? 0
       if (def?.emissive) {
@@ -142,11 +158,25 @@ export class ObjectManager {
   }
 }
 
+/** Repeint le visuel d'un poster si ses couleurs ont changé (texture propre à l'instance). */
+function paintArt(mesh: Mesh, material: MeshStandardMaterial, colors: { bg: string; a: string; b: string }) {
+  const key = `${colors.bg}|${colors.a}|${colors.b}`
+  if (mesh.userData.artKey === key) return
+  mesh.userData.artKey = key
+  material.map?.dispose()
+  material.map = createPosterTexture(mesh.userData.art as string, mesh.userData.artAspect as number, colors)
+  material.color.set('#ffffff')
+  material.needsUpdate = true
+}
+
 /** Les géométries sont partagées (AssetManager) : on ne libère ici que les matériaux propres à l'instance. */
 function disposeMaterials(root: Object3D) {
   root.traverse((obj) => {
     const mat = (obj as Mesh).material as Material | Material[] | undefined
-    if (Array.isArray(mat)) mat.forEach((m) => m.dispose())
-    else mat?.dispose()
+    for (const m of Array.isArray(mat) ? mat : mat ? [mat] : []) {
+      // Seules les textures de posters sont propres à l'instance ; celles des GLB sont partagées entre clones.
+      if (obj.userData.art) (m as MeshStandardMaterial).map?.dispose()
+      m.dispose()
+    }
   })
 }

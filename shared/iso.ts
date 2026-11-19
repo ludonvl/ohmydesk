@@ -62,6 +62,34 @@ function partToBox(
   return { x0: cx - w / 2, x1: cx + w / 2, y0: cy - h / 2, y1: cy + h / 2, z0: cz - d / 2, z1: cz + d / 2, color }
 }
 
+/** Un tube (néon) n'a pas de boîte unique : on le dessine comme une suite de petits cubes le long du tracé. */
+function tubeSamples(part: ProceduralPart): ProceduralPart[] {
+  const tube = part.tube!
+  const d = tube.radius * 2
+  const pts = tube.closed ? [...tube.points, tube.points[0]!] : tube.points
+  const out: ProceduralPart[] = []
+  for (let i = 0; i < pts.length - 1; i++) {
+    const [x0, y0] = pts[i]!
+    const [x1, y1] = pts[i + 1]!
+    const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / (d * 1.2)))
+    for (let k = 0; k < n; k++) {
+      const t = k / n
+      out.push({
+        shape: 'box',
+        size: [d, d, d],
+        position: [part.position[0] + x0 + (x1 - x0) * t, part.position[1] + y0 + (y1 - y0) * t, part.position[2]],
+        slot: part.slot,
+      })
+    }
+  }
+  return out
+}
+
+function partToBoxes(part: ProceduralPart, color: string, origin?: [number, number, number], rotationDeg?: number, scale?: number): IsoBox[] {
+  const parts = part.tube ? tubeSamples(part) : [part]
+  return parts.map((p) => partToBox(p, color, origin, rotationDeg, scale))
+}
+
 const EPS = 1e-4
 function isBehind(a: IsoBox, b: IsoBox): boolean {
   return a.x1 <= b.x0 + EPS || a.z1 <= b.z0 + EPS || a.y1 <= b.y0 + EPS
@@ -137,7 +165,7 @@ function slotColor(item: CatalogItem, slot: string, overrides?: Record<string, s
 /** Vignette d'un objet du catalogue. */
 export function catalogItemToIso(item: CatalogItem, overrides?: Record<string, string>): IsoDrawing {
   if (item.model.type !== 'procedural') return { viewBox: '0 0 10 10', polygons: [] }
-  const boxes = item.model.parts.map((p) => partToBox(p, slotColor(item, p.slot, overrides)))
+  const boxes = item.model.parts.flatMap((p) => partToBoxes(p, slotColor(item, p.slot, overrides)))
   const size = Math.max(item.dimensions.width, item.dimensions.height, item.dimensions.depth)
   return draw(boxes, size * 8)
 }
@@ -159,7 +187,7 @@ export function sceneToIso(scene: SceneData, catalog: ReadonlyMap<string, Catalo
     if (!item || item.model.type !== 'procedural') continue
     if (!walls && item.placement === 'wall') continue
     for (const part of item.model.parts) {
-      boxes.push(partToBox(part, slotColor(item, part.slot, obj.colors), obj.position, obj.rotation, obj.scale))
+      boxes.push(...partToBoxes(part, slotColor(item, part.slot, obj.colors), obj.position, obj.rotation, obj.scale))
     }
   }
   return draw(boxes, 40)

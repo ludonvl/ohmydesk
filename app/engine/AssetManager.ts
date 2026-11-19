@@ -1,5 +1,5 @@
 import type { BufferGeometry, Material, WebGLRenderer } from 'three'
-import { BoxGeometry, CylinderGeometry, Group, Mesh, MeshStandardMaterial } from 'three'
+import { BoxGeometry, CatmullRomCurve3, CurvePath, CylinderGeometry, Group, LineCurve3, Mesh, MeshStandardMaterial, TubeGeometry, Vector3 } from 'three'
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js'
 import type { GLTF, GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 import type { CatalogItem, ProceduralPart } from '#shared/catalog/types'
@@ -67,12 +67,17 @@ export class AssetManager {
   private buildProcedural(item: CatalogItem, parts: ProceduralPart[]): Group {
     const group = new Group()
     parts.forEach((part, index) => {
+      if (part.isoOnly) return
       const geometry = this.getGeometry(`${item.id}:${index}`, part)
       const mesh = new Mesh(geometry, new MeshStandardMaterial({ roughness: 0.55, metalness: 0 }))
       mesh.position.set(...part.position)
       if (part.rotation) mesh.rotation.set(...part.rotation)
       mesh.userData.slot = part.slot
-      mesh.castShadow = Math.min(...part.size) > 0.006
+      if (part.art) {
+        mesh.userData.art = part.art
+        mesh.userData.artAspect = part.size[1] / part.size[0]
+      }
+      mesh.castShadow = !part.tube && Math.min(...part.size) > 0.006
       mesh.receiveShadow = true
       group.add(mesh)
     })
@@ -83,7 +88,9 @@ export class AssetManager {
     let geometry = this.geometries.get(key)
     if (geometry) return geometry
     const [w, h, d] = part.size
-    if (part.shape === 'cylinder') {
+    if (part.tube) {
+      geometry = tubeGeometry(part.tube)
+    } else if (part.shape === 'cylinder') {
       geometry = new CylinderGeometry(w / 2, w / 2, h, 32)
     } else if (part.radius && part.radius > 0) {
       const radius = Math.min(part.radius, Math.min(w, h, d) / 2 - 1e-4)
@@ -130,4 +137,21 @@ export class AssetManager {
     this.geometries.clear()
     this.gltfCache.clear()
   }
+}
+
+/** Tube le long d'un tracé 2D (plan XY) : courbe lissée, ou segments droits pour les angles vifs. */
+function tubeGeometry(tube: NonNullable<ProceduralPart['tube']>): BufferGeometry {
+  const points = tube.points.map(([x, y]) => new Vector3(x, y, 0))
+  let curve: CatmullRomCurve3 | CurvePath<Vector3>
+  if (tube.smooth) {
+    curve = new CatmullRomCurve3(points, tube.closed ?? false, 'centripetal')
+  } else {
+    const path = new CurvePath<Vector3>()
+    const loop = tube.closed ? [...points, points[0]!] : points
+    for (let i = 0; i < loop.length - 1; i++) path.add(new LineCurve3(loop[i]!, loop[i + 1]!))
+    curve = path
+  }
+  // Échantillonnage dense : les angles vifs restent nets, les courbes restent rondes.
+  const segments = Math.max(32, Math.min(400, Math.round(curve.getLength() / 0.003)))
+  return new TubeGeometry(curve, segments, tube.radius, 10, tube.closed ?? false)
 }

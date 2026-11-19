@@ -1,10 +1,11 @@
 export type Vec3 = [number, number, number]
 
-export type PartShape = 'box' | 'cylinder'
+export type PartShape = 'box' | 'cylinder' | 'tube'
 
 /**
  * Pièce géométrique d'un modèle procédural.
- * `size` = [largeur, hauteur, profondeur] (pour un cylindre : [diamètre, hauteur, diamètre]).
+ * `size` = [largeur, hauteur, profondeur] (pour un cylindre : [diamètre, hauteur, diamètre] ;
+ * pour un tube : encombrement du tracé, épaisseur comprise).
  * `position` = centre de la pièce, relatif à l'origine de l'objet (centre de la base, au sol).
  * La face avant d'un objet regarde vers +Z.
  */
@@ -16,6 +17,22 @@ export interface ProceduralPart {
   slot: string
   /** Rayon d'arrondi des arêtes (boîtes uniquement). */
   radius?: number
+  /** Tube (néon) : tracé dans le plan XY, relatif à `position`. */
+  tube?: {
+    points: [number, number][]
+    /** Rayon du tube, en mètres. */
+    radius: number
+    closed?: boolean
+    /** Courbe lissée passant par les points (sinon segments droits, angles vifs). */
+    smooth?: boolean
+  }
+  /**
+   * Visuel peint sur la pièce (posters), identifiant d'un motif de `app/engine/posterArt.ts`.
+   * Le motif est dessiné avec les couleurs des slots de l'objet, il suit donc la personnalisation.
+   */
+  art?: string
+  /** Pièce dessinée seulement dans les vignettes isométriques (évocation d'un visuel peint). */
+  isoOnly?: boolean
 }
 
 /**
@@ -85,6 +102,8 @@ export interface CatalogItem {
   defaultScale: number
   materials: MaterialSlot[]
   placement: Placement
+  /** Lumière ponctuelle émise par l'objet (halo d'un néon), de la couleur du slot indiqué. */
+  light?: { slot: string; intensity: number; distance: number; position: Vec3 }
   /** Si défini, d'autres objets « surface » peuvent être posés dessus. */
   surface?: { height: number }
   anchors?: { name: string; position: Vec3 }[]

@@ -1,4 +1,6 @@
 import { deskFamily, deskItems } from './families/desks'
+import { neonFamily, neonItems } from './families/neons'
+import { posterFamily, posterItems } from './families/posters'
 import type { CatalogCategory, CatalogFamily, CatalogItem, ProceduralPart, Vec3 } from './types'
 
 export const catalogCategories: CatalogCategory[] = [
@@ -158,6 +160,7 @@ export const catalogItems: CatalogItem[] = [
     },
     tags: ['lampe', 'lumière', 'lamp'],
   },
+  ...neonItems,
   {
     id: 'plant-monstera',
     slug: 'monstera',
@@ -298,30 +301,7 @@ export const catalogItems: CatalogItem[] = [
     },
     tags: ['étagère', 'livres', 'rangement'],
   },
-  {
-    id: 'poster',
-    slug: 'poster',
-    name: 'Poster',
-    category: 'decor',
-    description: 'Affiche encadrée 50 × 70 cm.',
-    dimensions: { width: 0.5, height: 0.7, depth: 0.03 },
-    defaultScale: 1,
-    placement: 'wall',
-    materials: [
-      { slot: 'frame', label: 'Cadre', default: SHELL, customizable: true },
-      { slot: 'art', label: 'Fond', default: '#FFCF5A', customizable: true },
-      { slot: 'accent', label: 'Motif', default: '#FF6B35', customizable: true },
-    ],
-    model: {
-      type: 'procedural',
-      parts: [
-        box([0.5, 0.7, 0.02], [0, 0, 0.01], 'frame', 0.004),
-        box([0.44, 0.64, 0.004], [0, 0, 0.0215], 'art'),
-        box([0.2, 0.2, 0.004], [0, 0.08, 0.024], 'accent', 0.002),
-      ],
-    },
-    tags: ['poster', 'affiche', 'cadre'],
-  },
+  ...posterItems,
   {
     id: 'rug',
     slug: 'tapis',
@@ -366,7 +346,7 @@ export function getCatalogItem(id: string): CatalogItem | undefined {
   return catalogById.get(id)
 }
 
-export const catalogFamilies: CatalogFamily[] = [deskFamily]
+export const catalogFamilies: CatalogFamily[] = [deskFamily, neonFamily, posterFamily]
 const familyById: ReadonlyMap<string, CatalogFamily> = new Map(catalogFamilies.map((f) => [f.id, f]))
 
 export function getFamily(id: string | undefined): CatalogFamily | undefined {
