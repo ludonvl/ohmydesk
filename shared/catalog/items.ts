@@ -4,6 +4,7 @@ import { desktopFamily, desktopItems, laptopFamily, laptopItems } from './famili
 import { deskFamily, deskItems } from './families/desks'
 import { lampFamily, lampItems } from './families/lamps'
 import { neonFamily, neonItems } from './families/neons'
+import { plantFamily, plantItems } from './families/plants'
 import { keyboardFamily, keyboardItems, mouseFamily, mouseItems } from './families/peripherals'
 import { posterFamily, posterItems } from './families/posters'
 import { screenFamily, screenItems } from './families/screens'
@@ -60,55 +61,7 @@ export const catalogItems: CatalogItem[] = [
   ...chairItems,
   ...lampItems,
   ...neonItems,
-  {
-    id: 'plant-monstera',
-    slug: 'monstera',
-    name: 'Monstera',
-    category: 'plants',
-    description: 'Grande plante verte en pot.',
-    dimensions: { width: 0.5, height: 0.92, depth: 0.5 },
-    defaultScale: 1,
-    placement: 'floor',
-    materials: [
-      { slot: 'pot', label: 'Pot', default: SHELL, customizable: true },
-      { slot: 'leaves', label: 'Feuillage', default: '#3FAE7A', customizable: true, roughness: 0.8 },
-      { slot: 'leaves2', label: 'Feuillage clair', default: '#5CC992', customizable: true, roughness: 0.8 },
-    ],
-    model: {
-      type: 'procedural',
-      parts: [
-        cyl([0.32, 0.34, 0.32], [0, 0.17, 0], 'pot'),
-        box([0.5, 0.34, 0.5], [0, 0.5, 0], 'leaves', 0.08),
-        box([0.32, 0.28, 0.32], [0.04, 0.78, -0.02], 'leaves2', 0.07),
-      ],
-    },
-    tags: ['plante', 'monstera', 'vert'],
-  },
-  {
-    id: 'plant-succulent',
-    slug: 'succulente',
-    name: 'Succulente',
-    category: 'plants',
-    description: 'Petite plante grasse pour le bureau.',
-    dimensions: { width: 0.11, height: 0.16, depth: 0.11 },
-    defaultScale: 1,
-    placement: 'surface',
-    materials: [
-      { slot: 'pot', label: 'Pot', default: '#E3A587', customizable: true },
-      { slot: 'leaves', label: 'Feuillage', default: '#5E8C61', customizable: true, roughness: 0.8 },
-    ],
-    glb: { path: 'models/succulent-v1.glb' },
-    model: {
-      type: 'procedural',
-      parts: [
-        cyl([0.09, 0.08, 0.09], [0, 0.04, 0], 'pot'),
-        box([0.11, 0.08, 0.11], [0, 0.12, 0], 'leaves', 0.03),
-      ],
-    },
-    tags: ['plante', 'succulente', 'cactus'],
-  },
-  ...desktopItems,
-  ...laptopItems,
+  ...plantItems,
   {
     id: 'mug',
     slug: 'tasse',
@@ -207,7 +160,7 @@ export function getCatalogItem(id: string): CatalogItem | undefined {
   return catalogById.get(id)
 }
 
-export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, keyboardFamily, mouseFamily, desktopFamily, laptopFamily, chairFamily, speakerFamily, headphoneFamily, cubeShelfFamily, furnitureFamily, vitrineFamily, lampFamily, neonFamily, posterFamily]
+export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, keyboardFamily, mouseFamily, desktopFamily, laptopFamily, chairFamily, speakerFamily, headphoneFamily, cubeShelfFamily, furnitureFamily, vitrineFamily, lampFamily, plantFamily, neonFamily, posterFamily]
 const familyById: ReadonlyMap<string, CatalogFamily> = new Map(catalogFamilies.map((f) => [f.id, f]))
 
 export function getFamily(id: string | undefined): CatalogFamily | undefined {
