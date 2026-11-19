@@ -87,17 +87,7 @@ export class AssetManager {
   private getGeometry(key: string, part: ProceduralPart): BufferGeometry {
     let geometry = this.geometries.get(key)
     if (geometry) return geometry
-    const [w, h, d] = part.size
-    if (part.tube) {
-      geometry = tubeGeometry(part.tube)
-    } else if (part.shape === 'cylinder') {
-      geometry = new CylinderGeometry(w / 2, w / 2, h, 32)
-    } else if (part.radius && part.radius > 0) {
-      const radius = Math.min(part.radius, Math.min(w, h, d) / 2 - 1e-4)
-      geometry = radius > 0 ? new RoundedBoxGeometry(w, h, d, 3, radius) : new BoxGeometry(w, h, d)
-    } else {
-      geometry = new BoxGeometry(w, h, d)
-    }
+    geometry = partGeometry(part)
     this.geometries.set(key, geometry)
     return geometry
   }
@@ -137,6 +127,18 @@ export class AssetManager {
     this.geometries.clear()
     this.gltfCache.clear()
   }
+}
+
+/** Géométrie d'une pièce procédurale (non mise en cache). */
+export function partGeometry(part: ProceduralPart): BufferGeometry {
+  const [w, h, d] = part.size
+  if (part.tube) return tubeGeometry(part.tube)
+  if (part.shape === 'cylinder') return new CylinderGeometry(w / 2, w / 2, h, 32)
+  if (part.radius && part.radius > 0) {
+    const radius = Math.min(part.radius, Math.min(w, h, d) / 2 - 1e-4)
+    if (radius > 0) return new RoundedBoxGeometry(w, h, d, 3, radius)
+  }
+  return new BoxGeometry(w, h, d)
 }
 
 /** Tube le long d'un tracé 2D (plan XY) : courbe lissée, ou segments droits pour les angles vifs. */

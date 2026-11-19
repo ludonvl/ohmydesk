@@ -5,3 +5,5 @@
 export { Engine } from './Engine'
 export type { EngineEvents, EngineMode, EngineOptions } from './Engine'
 export { SceneSerializer } from './SceneSerializer'
+export { AvatarFigure } from './avatar/AvatarFigure'
+export { AvatarStage } from './avatar/AvatarStage'

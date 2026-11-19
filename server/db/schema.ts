@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm'
 import { bigint, boolean, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex } from 'drizzle-orm/pg-core'
+import type { Avatar } from '../../shared/avatar/schema'
 import type { CatalogItem } from '../../shared/catalog/types'
 import type { SceneData } from '../../shared/types/scene'
 
@@ -28,6 +29,8 @@ export const user = pgTable('user', {
    */
   username: text('username').unique(),
   bio: text('bio').notNull().default(''),
+  /** Avatar 3D (figurine) repris dans tous les setups de la personne ; null = pas encore créé. */
+  avatar3d: jsonb('avatar_3d').$type<Avatar>(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 })

@@ -272,7 +272,7 @@ async function changePassword() {
   <main class="mx-auto flex max-w-[720px] flex-col gap-6 px-6 pt-6 pb-24">
     <div class="flex flex-col gap-1.5">
       <h1 class="font-display text-[40px] leading-tight font-extrabold tracking-tight">Paramètres</h1>
-      <p class="text-subtle">Ton profil public, ton adresse email, ton mot de passe, tes moyens de connexion et la suppression de ton compte.</p>
+      <p class="text-subtle">Ton profil public, ton avatar, ton adresse email, ton mot de passe, tes moyens de connexion et la suppression de ton compte.</p>
     </div>
 
     <FormNotice v-if="pageNotice" :kind="pageNotice.kind">{{ pageNotice.text }}</FormNotice>
@@ -334,6 +334,11 @@ async function changePassword() {
         </div>
       </form>
     </section>
+
+    <!-- Avatar 3D -->
+    <ClientOnly>
+      <AvatarEditor v-if="ownProfile" :avatar="ownProfile.avatar" @saved="ownProfile = $event" />
+    </ClientOnly>
 
     <!-- Adresse email -->
     <section aria-labelledby="email-title" class="flex flex-col gap-5 rounded-3xl border border-line bg-white p-7">

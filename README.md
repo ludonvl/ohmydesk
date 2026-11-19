@@ -57,6 +57,10 @@ nommés comme leur slot (`body`, `pot`…). Nouvelle version d'un modèle = nouv
 - **Profils** (`/u/:username`) : nom, bio, setups publics, likes reçus. `/u/me` redirige vers son propre profil.
   L'identifiant est attribué à l'inscription (dérivé du nom) et se modifie dans `/settings#profil`
   (3 à 30 caractères : minuscules, chiffres, tirets ; quelques mots réservés).
+- **Avatar 3D** (`/settings#avatar`) : figurine articulée (silhouette, cheveux, haut, bas, accessoire, couleurs),
+  propre à la personne et reprise dans tous ses setups. Stockée dans `user.avatar_3d` (JSONB), enregistrée par
+  `PUT /api/profile/avatar`. Pièces procédurales par articulation dans `shared/avatar/rig.ts`, animation dans
+  `app/engine/avatar/` (respiration, regard, clignement, « coucou »), sans squelette ni GLB.
 - **Likes** : `POST` / `DELETE /api/setups/:id/like` (setups publics, connexion requise, idempotent).
   `setup.like_count` est recalculé dans la même transaction et sert au tri « Populaires ».
 - **Cache** : galerie, profils et viewer renvoient la même réponse à tout le monde (cache CDN) ;

@@ -4,6 +4,8 @@ import type { SceneData } from '#shared/types/scene'
 import type { GallerySetup, GallerySort, OwnProfile, PublicProfile } from '#shared/types/social'
 import { RESERVED_USERNAMES, USERNAME_MAX } from '#shared/types/social'
 import { slugify } from '#shared/utils/ids'
+import type { Avatar } from '#shared/avatar/schema'
+import { parseAvatar } from '#shared/avatar/schema'
 import { schema, useDb } from '../db/client'
 import { authorColumns, toSummary } from './setups'
 
@@ -116,8 +118,12 @@ export async function ensureUsername(userId: string, name: string): Promise<stri
 
 export async function getOwnProfile(userId: string, name: string): Promise<OwnProfile> {
   const username = await ensureUsername(userId, name)
-  const [row] = await useDb().select({ name: user.name, bio: user.bio }).from(user).where(eq(user.id, userId)).limit(1)
-  return { name: row?.name ?? name, username, bio: row?.bio ?? '' }
+  const [row] = await useDb().select({ name: user.name, bio: user.bio, avatar: user.avatar3d }).from(user).where(eq(user.id, userId)).limit(1)
+  return { name: row?.name ?? name, username, bio: row?.bio ?? '', avatar: parseAvatar(row?.avatar) }
+}
+
+export async function updateOwnAvatar(userId: string, avatar: Avatar): Promise<void> {
+  await useDb().update(user).set({ avatar3d: avatar }).where(eq(user.id, userId))
 }
 
 export async function updateOwnProfile(userId: string, patch: { name?: string; username?: string; bio?: string }): Promise<void> {

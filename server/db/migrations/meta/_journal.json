@@ -36,6 +36,13 @@
       "when": 1795110157798,
       "tag": "0004_thin_goliath",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795131555122,
+      "tag": "0005_tiresome_sunfire",
+      "breakpoints": true
     }
   ]
 }

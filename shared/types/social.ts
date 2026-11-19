@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { Avatar } from '../avatar/schema'
 import type { SceneData, SetupSummary } from './scene'
 
 /** Identifiants réservés : ils servent de routes ou prêteraient à confusion. */
@@ -57,6 +58,8 @@ export interface OwnProfile {
   name: string
   username: string
   bio: string
+  /** Avatar 3D ; null tant que la personne ne l'a pas créé. */
+  avatar: Avatar | null
 }
 
 export interface LikeState {
