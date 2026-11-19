@@ -2,6 +2,7 @@ import { headphoneFamily, headphoneItems, speakerFamily, speakerItems } from './
 import { chairFamily, chairItems } from './families/chairs'
 import { desktopFamily, desktopItems, laptopFamily, laptopItems } from './families/computers'
 import { deskFamily, deskItems } from './families/desks'
+import { lampFamily, lampItems } from './families/lamps'
 import { neonFamily, neonItems } from './families/neons'
 import { keyboardFamily, keyboardItems, mouseFamily, mouseItems } from './families/peripherals'
 import { posterFamily, posterItems } from './families/posters'
@@ -57,32 +58,7 @@ export const catalogItems: CatalogItem[] = [
     tags: ['tapis', 'desk mat'],
   },
   ...chairItems,
-  {
-    id: 'lamp-architect',
-    slug: 'lampe-architecte',
-    name: "Lampe d'archi",
-    category: 'lighting',
-    description: "Lampe d'architecte à bras articulé.",
-    dimensions: { width: 0.14, height: 0.46, depth: 0.27 },
-    defaultScale: 1,
-    placement: 'surface',
-    materials: [
-      { slot: 'shade', label: 'Abat-jour', default: '#FFCF5A', customizable: true },
-      { slot: 'frame', label: 'Bras', default: INK, customizable: true },
-      { slot: 'bulb', label: 'Ampoule', default: '#FFF4D6', customizable: false, emissive: 1.4 },
-    ],
-    model: {
-      type: 'procedural',
-      parts: [
-        cyl([0.14, 0.025, 0.14], [0, 0.0125, 0], 'frame'),
-        box([0.018, 0.42, 0.018], [0, 0.235, 0], 'frame'),
-        box([0.018, 0.018, 0.22], [0, 0.44, 0.1], 'frame'),
-        cyl([0.13, 0.08, 0.13], [0, 0.42, 0.2], 'shade'),
-        cyl([0.08, 0.01, 0.08], [0, 0.375, 0.2], 'bulb'),
-      ],
-    },
-    tags: ['lampe', 'lumière', 'lamp'],
-  },
+  ...lampItems,
   ...neonItems,
   {
     id: 'plant-monstera',
@@ -231,7 +207,7 @@ export function getCatalogItem(id: string): CatalogItem | undefined {
   return catalogById.get(id)
 }
 
-export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, keyboardFamily, mouseFamily, desktopFamily, laptopFamily, chairFamily, speakerFamily, headphoneFamily, cubeShelfFamily, furnitureFamily, vitrineFamily, neonFamily, posterFamily]
+export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, keyboardFamily, mouseFamily, desktopFamily, laptopFamily, chairFamily, speakerFamily, headphoneFamily, cubeShelfFamily, furnitureFamily, vitrineFamily, lampFamily, neonFamily, posterFamily]
 const familyById: ReadonlyMap<string, CatalogFamily> = new Map(catalogFamilies.map((f) => [f.id, f]))
 
 export function getFamily(id: string | undefined): CatalogFamily | undefined {
