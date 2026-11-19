@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
 
   if (body.fromSlug) {
     const source = await getSetupBySlug(body.fromSlug)
-    if (!source || !source.isPublic) throw createError({ statusCode: 404, statusMessage: 'Setup introuvable' })
+    if (!source || !source.isPublic || source.hidden) throw createError({ statusCode: 404, statusMessage: 'Setup introuvable' })
     const scene = structuredClone(source.scene)
     scene.objects = scene.objects.map((o) => ({ ...o, id: createId('o_') }))
     return toPublic(await createSetup({ userId: user.id, name: body.name ?? `${source.name} (remix)`, scene }))

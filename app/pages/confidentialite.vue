@@ -50,9 +50,19 @@ const toc = [
           <td>Exécution du contrat</td>
         </tr>
         <tr>
-          <td>Tes setups : nom, description, composition de la scène (objets, positions, couleurs) et leurs versions successives</td>
-          <td>Sauvegarder ton travail, le publier si tu le choisis</td>
+          <td>Tes setups : nom, description, composition de la scène (objets, positions, couleurs), leurs versions successives et une image d’aperçu générée par l’éditeur</td>
+          <td>Sauvegarder ton travail, le publier si tu le choisis, l’afficher dans la galerie</td>
           <td>Exécution du contrat</td>
+        </tr>
+        <tr>
+          <td>Ton profil public : identifiant (<code>@pseudo</code>), bio facultative ; les setups que tu as aimés</td>
+          <td>Présenter tes setups publiés, compter les « j’aime » et classer la galerie</td>
+          <td>Exécution du contrat</td>
+        </tr>
+        <tr>
+          <td>Signalements que tu envoies : setup concerné, motif, précisions éventuelles</td>
+          <td>Traiter les contenus signalés et retirer ceux qui enfreignent les conditions</td>
+          <td>Intérêt légitime (modération) ; obligation légale (retrait des contenus illicites)</td>
         </tr>
         <tr>
           <td>Emails qui te sont envoyés (confirmation d’adresse, changement d’email ou de mot de passe, réinitialisation)</td>
@@ -83,16 +93,20 @@ const toc = [
     <h2 id="public">3. Ce qui est visible publiquement</h2>
     <p>Par défaut, un setup est <strong>privé</strong> : toi seul le vois. Quand tu le publies :</p>
     <ul>
-      <li>son nom, sa description, sa scène 3D et le <strong>nom ou pseudo</strong> de ton compte deviennent visibles par toute personne disposant du lien ;</li>
+      <li>son nom, sa description, sa scène 3D, son aperçu et le <strong>nom ou pseudo</strong> de ton compte deviennent visibles par tout le monde, dans la galerie et via son lien ;</li>
+      <li>ton <strong>profil public</strong> (nom, identifiant, bio, setups publiés, nombre de « j’aime » reçus) est accessible depuis le setup ;</li>
       <li>il peut être affiché sur d’autres sites via le code d’intégration (iframe) ;</li>
       <li>d’autres utilisateurs peuvent en créer une copie pour la modifier (« Remixer »).</li>
     </ul>
-    <p>Ton adresse email n’est jamais affichée publiquement. Tu peux retirer la publication à tout moment depuis l’éditeur.</p>
+    <p>
+      Le nombre de « j’aime » d’un setup est public, mais pas la liste des personnes qui l’ont aimé. Ton adresse email n’est jamais affichée publiquement,
+      et la personne dont tu signales un setup ne sait pas qui l’a signalé. Tu peux retirer la publication à tout moment depuis l’éditeur.
+    </p>
 
     <h2 id="prestataires">4. Prestataires et transferts hors de l’Union européenne</h2>
     <p>Tes données sont traitées par les prestataires techniques suivants, uniquement pour faire fonctionner le service :</p>
     <ul>
-      <li><strong>Vercel Inc.</strong> (États-Unis) : hébergement de l’application et exécution du code serveur.</li>
+      <li><strong>Vercel Inc.</strong> (États-Unis) : hébergement de l’application, exécution du code serveur et stockage des fichiers (aperçus des setups, modèles 3D).</li>
       <li><strong>Neon</strong> : base de données, hébergée dans l’Union européenne (Francfort, Allemagne).</li>
       <li><strong>Resend</strong> (Plus Five Five, Inc., États-Unis) : envoi des emails de compte.</li>
       <li><strong>Google</strong> : uniquement si tu choisis de te connecter avec Google.</li>
@@ -105,9 +119,10 @@ const toc = [
 
     <h2 id="conservation">5. Durées de conservation</h2>
     <ul>
-      <li><strong>Compte et setups</strong> : tant que ton compte existe. Après une demande de suppression, ils sont effacés dans un délai d’un mois.</li>
+      <li><strong>Compte, profil, setups et « j’aime »</strong> : tant que ton compte existe. Quand tu supprimes ton compte depuis les paramètres, ils sont effacés immédiatement, aperçus compris.</li>
+      <li><strong>Signalements</strong> : tant que le setup signalé existe ; ils sont effacés avec lui, ou avec ton compte.</li>
       <li><strong>Sessions de connexion</strong> : 30 jours maximum, ou jusqu’à la déconnexion.</li>
-      <li><strong>Liens envoyés par email</strong> (confirmation, réinitialisation) : valables 1 heure, puis inutilisables.</li>
+      <li><strong>Liens envoyés par email</strong> (confirmation, réinitialisation, suppression du compte) : valables 1 heure, puis inutilisables.</li>
       <li><strong>Compteurs anti-abus</strong> : quelques minutes à une heure.</li>
       <li><strong>Journaux techniques</strong> : selon la durée de conservation propre à l’hébergeur, généralement de quelques jours.</li>
     </ul>
@@ -130,14 +145,14 @@ const toc = [
     <p>Conformément au RGPD et à la loi Informatique et Libertés, tu disposes des droits suivants sur tes données :</p>
     <ul>
       <li><strong>accès</strong> : obtenir une copie des données te concernant ;</li>
-      <li><strong>rectification</strong> : tu peux modifier ton adresse email et ton mot de passe directement dans les paramètres ;</li>
-      <li><strong>effacement</strong> : demander la suppression de ton compte et de tes setups ;</li>
+      <li><strong>rectification</strong> : tu peux modifier ton nom, ton identifiant, ta bio, ton adresse email et ton mot de passe directement dans les paramètres ;</li>
+      <li><strong>effacement</strong> : tu peux supprimer ton compte et toutes tes données toi-même, depuis les paramètres (« Supprimer mon compte ») ;</li>
       <li><strong>portabilité</strong> : recevoir tes setups dans un format lisible par une machine (JSON) ;</li>
       <li><strong>opposition et limitation</strong> pour les traitements fondés sur l’intérêt légitime ;</li>
       <li><strong>directives post-mortem</strong> : indiquer ce que deviennent tes données après ton décès.</li>
     </ul>
     <p>
-      Pour exercer ces droits, écris à <strong>{{ LEGAL.publisher.email }}</strong> depuis l’adresse liée à ton compte. Une réponse t’est apportée dans un délai d’un mois.
+      Pour exercer les autres droits, ou si tu ne peux plus accéder à ton compte, écris à <strong>{{ LEGAL.publisher.email }}</strong> depuis l’adresse liée à ton compte. Une réponse t’est apportée dans un délai d’un mois.
       Si tu estimes que tes droits ne sont pas respectés, tu peux adresser une réclamation à la CNIL (<a href="https://www.cnil.fr" target="_blank" rel="noopener">cnil.fr</a>).
     </p>
 

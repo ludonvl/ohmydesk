@@ -142,6 +142,9 @@ export const setup = pgTable(
     previewUrl: text('preview_url'),
     /** Nombre de likes, dénormalisé pour trier la galerie ; recalculé à chaque like / unlike. */
     likeCount: integer('like_count').notNull().default(0),
+    /** Masqué par la modération : absent de la galerie et des pages publiques, même s'il est publié. */
+    hiddenAt: timestamp('hidden_at', { withTimezone: true }),
+    hiddenReason: text('hidden_reason'),
     publishedAt: timestamp('published_at', { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -180,6 +183,30 @@ export const setupVersion = pgTable(
     createdAt: createdAt(),
   },
   (t) => [uniqueIndex('setup_version_setup_version_uq').on(t.setupId, t.version)],
+)
+
+/** Signalement d'un setup public, un seul par personne et par setup. */
+export const setupReport = pgTable(
+  'setup_report',
+  {
+    id: text('id').primaryKey(),
+    setupId: text('setup_id')
+      .notNull()
+      .references(() => setup.id, { onDelete: 'cascade' }),
+    reporterId: text('reporter_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    reason: text('reason').notNull(),
+    details: text('details').notNull().default(''),
+    /** open : à traiter · dismissed : classé sans suite · actioned : setup masqué */
+    status: text('status').notNull().default('open'),
+    createdAt: createdAt(),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }),
+  },
+  (t) => [
+    uniqueIndex('setup_report_setup_reporter_uq').on(t.setupId, t.reporterId),
+    index('setup_report_status_idx').on(t.status, t.createdAt),
+  ],
 )
 
 /* Relations */

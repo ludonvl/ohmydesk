@@ -177,3 +177,69 @@ export function passwordResetDoneEmail(name: string, resetUrl: string) {
 function formatNow(): string {
   return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/Paris' }).format(new Date())
 }
+
+export function deleteAccountEmail(name: string, url: string) {
+  return build('Confirme la suppression de ton compte', {
+    title: 'Supprimer ton compte',
+    paragraphs: [
+      hello(name),
+      'Tu as demandé la suppression de ton compte Oh My Desk. Elle effacera définitivement ton profil, tes setups (publiés ou non), leurs aperçus et tes « j’aime ».',
+      'Ouvre le lien ci-dessous dans le navigateur où tu es connecté pour confirmer. Il est valable 1 heure.',
+    ],
+    cta: { label: 'Confirmer la suppression', url },
+    note: 'Si tu n’es pas à l’origine de cette demande, ignore cet email : ton compte reste intact. Change ton mot de passe par précaution.',
+    footer: FOOTER_ACCOUNT,
+  })
+}
+
+export function accountDeletedEmail(name: string) {
+  return build('Ton compte a été supprimé', {
+    title: 'Compte supprimé',
+    paragraphs: [
+      hello(name),
+      `Ton compte Oh My Desk a été supprimé le ${formatNow()}, avec ton profil, tes setups et tes « j’aime ».`,
+      'Les copies de tes setups publics que d’autres personnes avaient remixées restent dans leur compte.',
+      'Merci d’avoir utilisé Oh My Desk.',
+    ],
+    footer: 'Tu reçois cet email pour confirmer la suppression de ton compte. Tu n’en recevras plus d’autre.',
+  })
+}
+
+export function reportNotificationEmail(input: {
+  setupName: string
+  setupUrl: string
+  moderationUrl: string
+  reason: string
+  details: string
+  openCount: number
+  autoHidden: boolean
+}) {
+  const paragraphs = [
+    `Le setup « ${input.setupName} » vient d’être signalé.`,
+    `Motif : ${input.reason}.`,
+    ...(input.details ? [`Précisions : ${input.details}`] : []),
+    `Signalements en attente pour ce setup : ${input.openCount}. Lien : ${input.setupUrl}`,
+    ...(input.autoHidden ? ['Le seuil de signalements est atteint : le setup a été masqué automatiquement en attendant ton examen.'] : []),
+  ]
+  return build(`Signalement : ${input.setupName}`, {
+    title: 'Nouveau signalement',
+    paragraphs,
+    cta: { label: 'Ouvrir la modération', url: input.moderationUrl },
+    footer: 'Tu reçois cet email parce que ton adresse figure dans ADMIN_EMAILS.',
+  })
+}
+
+export function setupHiddenEmail(name: string, setupName: string, reason: string, termsUrl: string) {
+  return build('Un de tes setups a été retiré de la galerie', {
+    title: 'Setup retiré de la galerie',
+    paragraphs: [
+      hello(name),
+      `Ton setup « ${setupName} » a été signalé puis examiné. Il ne respecte pas les conditions d’utilisation (motif : ${reason}) : il n’apparaît plus dans la galerie ni sur ton profil, et son lien public ne fonctionne plus.`,
+      'Il reste dans ton tableau de bord : tu peux toujours le modifier ou le supprimer.',
+      'Si tu penses qu’il s’agit d’une erreur, réponds à cet email en expliquant pourquoi.',
+    ],
+    cta: { label: 'Lire les conditions d’utilisation', url: termsUrl },
+    footer: 'Tu reçois cet email parce qu’il concerne un contenu publié depuis ton compte Oh My Desk.',
+  })
+}
+

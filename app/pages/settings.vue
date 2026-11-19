@@ -72,6 +72,35 @@ async function saveProfile() {
   }
 }
 
+/* ---------------- Suppression du compte ---------------- */
+
+const deletePassword = ref('')
+const deleteTouched = ref(false)
+const deleteSubmitting = ref(false)
+const deleteError = ref('')
+const deleteSentTo = ref('')
+const deletePasswordError = computed(() => (deleteTouched.value && hasPassword.value && !deletePassword.value ? 'Saisis ton mot de passe pour confirmer.' : ''))
+
+async function requestAccountDeletion() {
+  deleteTouched.value = true
+  deleteError.value = ''
+  deleteSentTo.value = ''
+  if (deletePasswordError.value || !user.value) return
+  deleteSubmitting.value = true
+  try {
+    const { error } = await authClient.deleteUser(hasPassword.value ? { password: deletePassword.value } : {})
+    if (error) {
+      deleteError.value = authErrorMessage(error)
+      return
+    }
+    deleteSentTo.value = user.value.email
+    deletePassword.value = ''
+    deleteTouched.value = false
+  } finally {
+    deleteSubmitting.value = false
+  }
+}
+
 /* ---------------- Comptes associés (mot de passe, Google) ---------------- */
 
 const providers = ref<string[] | null>(null)
@@ -243,7 +272,7 @@ async function changePassword() {
   <main class="mx-auto flex max-w-[720px] flex-col gap-6 px-6 pt-6 pb-24">
     <div class="flex flex-col gap-1.5">
       <h1 class="font-display text-[40px] leading-tight font-extrabold tracking-tight">Paramètres</h1>
-      <p class="text-subtle">Ton profil public, ton adresse email, ton mot de passe et tes moyens de connexion.</p>
+      <p class="text-subtle">Ton profil public, ton adresse email, ton mot de passe, tes moyens de connexion et la suppression de ton compte.</p>
     </div>
 
     <FormNotice v-if="pageNotice" :kind="pageNotice.kind">{{ pageNotice.text }}</FormNotice>
@@ -459,6 +488,44 @@ async function changePassword() {
         </div>
         <p class="text-[13px] text-muted">Le compte Google doit utiliser la même adresse email ({{ user?.email }}).</p>
       </template>
+    </section>
+
+    <!-- Suppression du compte -->
+    <section id="suppression" aria-labelledby="delete-title" class="flex scroll-mt-6 flex-col gap-5 rounded-3xl border border-[#f2c7bd] bg-white p-7">
+      <div class="flex flex-col gap-1.5">
+        <h2 id="delete-title" class="font-display text-2xl font-bold">Supprimer mon compte</h2>
+        <p class="text-[15px] leading-relaxed text-subtle">
+          Ton profil, tous tes setups (publiés ou non), leurs aperçus et tes « j’aime » seront effacés définitivement.
+          Les copies que d’autres personnes ont remixées à partir de tes setups publics restent dans leur compte.
+        </p>
+      </div>
+      <form class="flex flex-col gap-4" novalidate @submit.prevent="requestAccountDeletion">
+        <input v-if="user && hasPassword" type="email" :value="user.email" autocomplete="username" class="sr-only" tabindex="-1" aria-hidden="true" readonly>
+        <TextField
+          v-if="hasPassword"
+          id="delete-password"
+          v-model="deletePassword"
+          label="Mot de passe"
+          type="password"
+          autocomplete="current-password"
+          :error="deletePasswordError"
+          @blur="deleteTouched = true"
+        />
+        <p class="text-[13px] text-muted">
+          Pour ta sécurité, tu recevras un lien de confirmation par email{{ user ? ` (${user.email})` : '' }}, valable 1 heure.
+          Rien n’est supprimé avant que tu cliques dessus.
+        </p>
+        <FormNotice v-if="deleteError" kind="error">{{ deleteError }}</FormNotice>
+        <FormNotice v-if="deleteSentTo" kind="success">
+          Email envoyé à <strong>{{ deleteSentTo }}</strong>. Ouvre le lien dans ce navigateur pour confirmer la suppression.
+        </FormNotice>
+        <div>
+          <Button type="submit" class="bg-[#b3361f] text-white hover:bg-[#9a2e1a]" :aria-busy="deleteSubmitting">
+            <LoaderCircle v-if="deleteSubmitting" class="size-4 animate-spin" aria-hidden="true" />
+            Recevoir le lien de suppression
+          </Button>
+        </div>
+      </form>
     </section>
   </main>
 </template>

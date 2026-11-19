@@ -85,7 +85,9 @@ const toc = [
       <li>perturber le fonctionnement du service ou tenter d’accéder à des données qui ne te sont pas destinées.</li>
     </ul>
     <p>
-      Tu peux signaler un contenu publié qui te semble illicite en écrivant à <strong>{{ LEGAL.publisher.email }}</strong>, avec le lien du setup concerné.
+      Tu peux signaler un setup publié qui te semble illicite ou contraire à ces conditions avec le bouton « Signaler » de sa page,
+      ou en écrivant à <strong>{{ LEGAL.publisher.email }}</strong> avec son lien. Un setup signalé par plusieurs personnes est masqué
+      de la galerie en attendant son examen ; s’il enfreint ces conditions, il reste masqué et son auteur en est informé par email.
     </p>
 
     <h2 id="propriete">7. Propriété intellectuelle d’Oh My Desk</h2>
@@ -116,7 +118,7 @@ const toc = [
 
     <h2 id="fin">11. Suppression du compte et suspension</h2>
     <ul>
-      <li>Tu peux demander la suppression de ton compte à tout moment en écrivant à <strong>{{ LEGAL.publisher.email }}</strong>. Tes données sont alors effacées dans un délai d’un mois.</li>
+      <li>Tu peux supprimer ton compte à tout moment depuis les paramètres (« Supprimer mon compte »), après confirmation par email. Tes données sont alors effacées immédiatement. Si tu ne peux plus accéder à ton compte, écris à <strong>{{ LEGAL.publisher.email }}</strong>.</li>
       <li>En cas de manquement grave à ces conditions, ton compte peut être suspendu ou supprimé, après t’avoir prévenu par email lorsque c’est possible.</li>
     </ul>
 

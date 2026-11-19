@@ -5,8 +5,12 @@ import type { H3Event } from 'h3'
 import { schema, useDb } from '../db/client'
 import type { MailResult } from './email'
 import { ensureUsername } from './social'
+import type { AccountCleanup } from './account'
+import { finishAccountDeletion, prepareAccountDeletion } from './account'
 import {
+  accountDeletedEmail,
   changeEmailApprovalEmail,
+  deleteAccountEmail,
   newEmailVerificationEmail,
   passwordChangedEmail,
   passwordResetDoneEmail,
@@ -29,6 +33,9 @@ function failLoudly(result: MailResult) {
     message: import.meta.dev ? `Resend a refusé l’envoi : ${result.reason}` : 'L’email n’a pas pu être envoyé. Réessaie dans quelques minutes.',
   })
 }
+
+/** Données lues avant une suppression de compte, utilisées juste après (fichiers, compteurs de likes). */
+const pendingDeletions = new Map<string, AccountCleanup>()
 
 function createAuth() {
   // Sur Vercel, les déploiements de prévisualisation ont leur propre URL.
@@ -91,6 +98,30 @@ function createAuth() {
     },
 
     user: {
+      // Suppression de compte : mot de passe vérifié s'il existe, puis confirmation par un lien email
+      // (valable 1 h, à ouvrir dans le navigateur connecté). Les données partent en cascade (clés étrangères).
+      deleteUser: {
+        enabled: true,
+        deleteTokenExpiresIn: 60 * 60,
+        sendDeleteAccountVerification: async ({ user, token }) => {
+          failLoudly(await sendMail({ to: user.email, ...deleteAccountEmail(user.name, `${appURL}/delete-account?token=${token}`) }))
+        },
+        beforeDelete: async (user) => {
+          pendingDeletions.set(user.id, await prepareAccountDeletion(user.id))
+        },
+        afterDelete: async (user) => {
+          const cleanup = pendingDeletions.get(user.id)
+          pendingDeletions.delete(user.id)
+          if (cleanup) {
+            try {
+              await finishAccountDeletion(cleanup)
+            } catch (error) {
+              console.error('[auth] Nettoyage après suppression de compte incomplet', error)
+            }
+          }
+          await sendMail({ to: user.email, ...accountDeletedEmail(user.name) })
+        },
+      },
       changeEmail: {
         enabled: true,
         // Sécurité : le changement doit d'abord être approuvé depuis l'adresse actuelle,
@@ -142,6 +173,7 @@ function createAuth() {
         '/change-password': { window: 15 * 60, max: 5 },
         '/request-password-reset': { window: 15 * 60, max: 3 },
         '/reset-password': { window: 15 * 60, max: 5 },
+        '/delete-user': { window: 15 * 60, max: 5 },
         '/get-session': false,
       },
     },

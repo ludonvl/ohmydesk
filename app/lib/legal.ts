@@ -4,7 +4,7 @@
  */
 export const LEGAL = {
   /** Date affichée en tête des deux pages ; à mettre à jour à chaque modification du contenu. */
-  updatedAt: '17 novembre 2026',
+  updatedAt: '19 novembre 2026',
   siteName: 'Oh My Desk',
   siteUrl: 'https://ohmydesk.ludovicnouvel.com',
   publisher: {

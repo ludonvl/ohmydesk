@@ -1,3 +1,4 @@
+/// <reference path="./types/route-rules.d.ts" />
 import tailwindcss from '@tailwindcss/vite'
 
 /**

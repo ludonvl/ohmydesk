@@ -67,6 +67,8 @@ export interface SetupSummary {
   authorUsername: string | null
   authorImage: string | null
   likeCount: number
+  /** Masqué par la modération (visible seulement par son auteur, dans le tableau de bord). */
+  hidden: boolean
   /** Aperçu PNG (URL absolue Vercel Blob, ou `/blob/…` en développement local). */
   previewUrl: string | null
   publishedAt: string | null

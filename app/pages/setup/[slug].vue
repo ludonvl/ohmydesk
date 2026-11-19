@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Check, ChevronRight, Code, Copy, Hand, Link, Maximize, Rotate3d, ZoomIn, ZoomOut } from 'lucide-vue-next'
+import { Check, ChevronRight, Code, Copy, Flag, Hand, Link, Maximize, Rotate3d, ZoomIn, ZoomOut } from 'lucide-vue-next'
 import { getCatalogItem, getCategoryName } from '#shared/catalog/items'
 import type { SetupWithScene } from '#shared/types/scene'
 import type { LikeState } from '#shared/types/social'
@@ -45,6 +45,7 @@ const stage = ref<HTMLElement | null>(null)
 const autoRotate = ref(false)
 const highlighted = ref<string | null>(null)
 const embedOpen = ref(false)
+const reportOpen = ref(false)
 const copied = ref<'link' | 'embed' | null>(null)
 
 const items = computed(() => {
@@ -210,6 +211,15 @@ function onLike(state: LikeState) {
           </li>
         </ul>
       </section>
+      <ReportPanel v-if="reportOpen" :setup-id="setup.id" :setup-name="setup.name" @close="reportOpen = false" />
+      <button
+        v-else
+        type="button"
+        class="flex items-center gap-1.5 self-start rounded-lg px-1 py-1 text-[13px] font-medium text-muted hover:text-ink"
+        @click="reportOpen = true"
+      >
+        <Flag class="size-3.5" aria-hidden="true" />Signaler ce setup
+      </button>
     </aside>
   </main>
 </template>

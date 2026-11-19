@@ -1,5 +1,5 @@
 import type { SQL } from 'drizzle-orm'
-import { and, desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, isNull, sql } from 'drizzle-orm'
 import type { SceneData } from '#shared/types/scene'
 import type { GallerySetup, GallerySort, OwnProfile, PublicProfile } from '#shared/types/social'
 import { RESERVED_USERNAMES, USERNAME_MAX } from '#shared/types/social'
@@ -34,6 +34,9 @@ async function listCards(where: SQL, orderBy: SQL[], limit: number, offset = 0):
   return rows.map((r) => ({ ...toSummary(r.s, r.author), objectCount: r.objectCount, scene: r.scene }))
 }
 
+/** Visible publiquement : publié et non masqué par la modération. */
+export const publiclyVisible = () => and(eq(setup.isPublic, true), isNull(setup.hiddenAt)) as SQL
+
 const ORDER: Record<GallerySort, SQL[]> = {
   recent: [desc(setup.publishedAt), desc(setup.id)],
   popular: [desc(setup.likeCount), desc(setup.publishedAt), desc(setup.id)],
@@ -41,7 +44,7 @@ const ORDER: Record<GallerySort, SQL[]> = {
 
 /** Setups publics, page par page. On lit un élément de plus pour savoir s'il reste une page. */
 export async function listGallery(sort: GallerySort, page: number, pageSize: number) {
-  const items = await listCards(eq(setup.isPublic, true), ORDER[sort], pageSize + 1, (page - 1) * pageSize)
+  const items = await listCards(publiclyVisible(), ORDER[sort], pageSize + 1, (page - 1) * pageSize)
   return { items: items.slice(0, pageSize), page, hasMore: items.length > pageSize }
 }
 
@@ -57,7 +60,7 @@ export async function getPublicProfile(username: string): Promise<PublicProfile 
     .where(eq(user.username, username))
     .limit(1)
   if (!owner?.username) return null
-  const where = and(eq(setup.userId, owner.id), eq(setup.isPublic, true)) as SQL
+  const where = and(eq(setup.userId, owner.id), publiclyVisible()) as SQL
   const [setups, [stats]] = await Promise.all([
     listCards(where, ORDER.recent, 60),
     db

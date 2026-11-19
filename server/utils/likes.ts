@@ -9,6 +9,6 @@ export async function handleLike(event: H3Event, liked: boolean): Promise<LikeSt
   const user = await requireUser(event)
   const id = getRouterParam(event, 'id')
   const record = id ? await getSetupById(id) : null
-  if (!record || !record.isPublic) throw createError({ statusCode: 404, statusMessage: 'Setup introuvable' })
+  if (!record || !record.isPublic || record.hidden) throw createError({ statusCode: 404, statusMessage: 'Setup introuvable' })
   return { liked, likeCount: await setLike(record.id, user.id, liked) }
 }

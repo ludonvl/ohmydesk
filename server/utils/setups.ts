@@ -48,6 +48,7 @@ export function toSummary(s: typeof setup.$inferSelect, author: Author): SetupSu
     authorUsername: author.username,
     authorImage: author.image,
     likeCount: s.likeCount,
+    hidden: s.hiddenAt !== null,
     previewUrl: s.previewUrl,
     publishedAt: iso(s.publishedAt),
     createdAt: s.createdAt.toISOString(),

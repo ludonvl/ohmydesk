@@ -1,10 +1,22 @@
 <script setup lang="ts">
-import { LayoutGrid, LogOut, Settings, UserRound } from 'lucide-vue-next'
+import { LayoutGrid, LogOut, Settings, ShieldCheck, UserRound } from 'lucide-vue-next'
 import { authClient } from '~/lib/auth-client'
 
 const props = withDefaults(defineProps<{ name: string; email: string; image?: string | null; dark?: boolean }>(), { image: null, dark: false })
 
 const open = ref(false)
+/** Lien « Modération » : vérifié à la première ouverture du menu seulement. */
+const isAdmin = ref(false)
+let adminChecked = false
+watch(open, async (value) => {
+  if (!value || adminChecked) return
+  adminChecked = true
+  try {
+    isAdmin.value = (await $fetch<{ admin: boolean }>('/api/admin/status')).admin
+  } catch {
+    isAdmin.value = false
+  }
+})
 const root = ref<HTMLElement | null>(null)
 const initials = computed(() =>
   props.name
@@ -76,6 +88,16 @@ onBeforeUnmount(() => document.removeEventListener('click', onClickOutside))
         @click="open = false"
       >
         <Settings class="size-4" aria-hidden="true" />Paramètres
+      </NuxtLink>
+      <NuxtLink
+        v-if="isAdmin"
+        to="/admin/moderation"
+        role="menuitem"
+        class="flex h-10 items-center gap-2.5 rounded-xl px-3 text-sm font-medium"
+        :class="dark ? 'hover:bg-chrome-raised' : 'hover:bg-lilac'"
+        @click="open = false"
+      >
+        <ShieldCheck class="size-4" aria-hidden="true" />Modération
       </NuxtLink>
       <button
         role="menuitem"

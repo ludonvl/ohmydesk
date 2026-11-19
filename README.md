@@ -23,7 +23,7 @@ npm run dev              # http://localhost:3000
 | `db:studio` | Explorateur de données Drizzle |
 | `db:seed` | Catalogue et setups de démo (idempotent) |
 
-Tables : `user` (dont `username`, `bio`), `session`, `account`, `verification` (Better Auth), `setup` (dont `preview_url`, `like_count`), `setup_version` (scène en JSONB), `setup_like`, `catalog_category`, `catalog_item`.
+Tables : `user` (dont `username`, `bio`), `session`, `account`, `verification` (Better Auth), `setup` (dont `preview_url`, `like_count`, `hidden_at`), `setup_version` (scène en JSONB), `setup_like`, `setup_report`, `catalog_category`, `catalog_item`.
 Les sauvegardes automatiques rapprochées (moins de 10 min) mettent à jour la même `setup_version` ; au-delà, une nouvelle version est créée.
 
 ### Fichiers (Vercel Blob)
@@ -62,6 +62,17 @@ nommés comme leur slot (`body`, `pot`…). Nouvelle version d'un modèle = nouv
 - **Cache** : galerie, profils et viewer renvoient la même réponse à tout le monde (cache CDN) ;
   les likes de la personne connectée sont lus à part, côté client (`GET /api/me/likes?ids=…`).
 
+### Modération
+
+- **Signaler** : lien « Signaler ce setup » sur le viewer public (connexion requise, un signalement par personne et par setup,
+  20 par jour au maximum). Les adresses de `ADMIN_EMAILS` reçoivent un email à chaque signalement.
+- **Masquage automatique** : à partir de 3 signalements en attente, le setup est masqué en attendant l'examen.
+- **Espace de modération** `/admin/moderation` (lien « Modération » du menu, réservé à `ADMIN_EMAILS`, adresse confirmée) :
+  masquer un setup en choisissant le motif (son auteur est prévenu par email), le rétablir, ou classer les signalements sans suite.
+  Un setup masqué disparaît de la galerie, des profils, du viewer, de l'intégration et ne peut plus être aimé ni remixé ;
+  son auteur le voit toujours dans son tableau de bord, avec un badge « Masqué ».
+- **Aperçus manquants** : la même page génère dans le navigateur les PNG des setups publics qui n'en ont pas (démos…).
+
 ### Authentification
 
 Better Auth, email + mot de passe avec **confirmation obligatoire de l'email** (lien envoyé via Resend, valable 1 h, connexion automatique après clic).
@@ -72,6 +83,9 @@ Paramètres (`/settings`) :
 - **Changement d'email** en deux étapes : approbation depuis l'adresse actuelle, puis confirmation de la nouvelle adresse.
 - **Changement de mot de passe** (avec option « déconnecter mes autres appareils »), suivi d'un email de notification.
 - **Mot de passe oublié** (`/forgot-password` → email → `/reset-password`), avec email de confirmation et déconnexion de tous les appareils.
+- **Suppression du compte** : mot de passe (s'il existe), puis lien par email valable 1 h, à ouvrir connecté (`/delete-account`).
+  Profil, setups, versions, likes, signalements et sessions partent en cascade ; les aperçus sont supprimés du stockage,
+  les compteurs de likes recalculés, et un email de confirmation est envoyé.
 
 **Connexion Google** : le bouton « Continuer avec Google » apparaît dès que `GOOGLE_CLIENT_ID` et `GOOGLE_CLIENT_SECRET` sont renseignés.
 Un compte email existant avec la même adresse est associé automatiquement. Depuis `/settings`, on peut associer Google à un compte existant,
@@ -151,10 +165,11 @@ server/              API Nitro
 - [x] Étape 2 : Neon + Drizzle (User, Setup, SetupVersion, CatalogItem, CatalogCategory), Better Auth (email/mot de passe, OAuth Google prêt), routes protégées
 - [x] Étape 3 : Vercel Blob (repli local), aperçus PNG via `engine.capture()`, premiers modèles GLB (tasse, succulente) avec repli procédural. Textures : chargement KTX2 prêt, aucune texture publiée pour l'instant
 - [x] Étape 4 : galerie publique (récents, populaires), profils publics, likes
+- [x] Étape 5 : suppression du compte en libre-service, signalements et modération, aperçus des setups de démo, `nuxt typecheck` sans erreur
 
 ## Déploiement Vercel
 
-Variables à définir dans le projet : `DATABASE_URL` (ajoutée automatiquement par l'intégration Neon), `BLOB_READ_WRITE_TOKEN`
+Variables à définir dans le projet : `ADMIN_EMAILS` (modération), `DATABASE_URL` (ajoutée automatiquement par l'intégration Neon), `BLOB_READ_WRITE_TOKEN`
 (ajoutée en créant un store Blob dans Vercel → Storage, puis `npm run assets:upload` avec ce jeton pour publier les GLB), `BETTER_AUTH_SECRET`,
 `BETTER_AUTH_URL` (production uniquement : les prévisualisations utilisent `VERCEL_URL`), `NUXT_PUBLIC_SITE_URL`.
 Les migrations ne sont pas lancées au build : `npm run db:migrate` avec la `DATABASE_URL` de production avant de déployer un changement de schéma.

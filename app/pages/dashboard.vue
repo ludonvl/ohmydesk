@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Eye, Globe, Lock, Plus, Trash2 } from 'lucide-vue-next'
+import { Eye, EyeOff, Globe, Lock, Plus, Trash2 } from 'lucide-vue-next'
 import { roomThemes } from '#shared/themes'
 import type { RoomThemeId, SetupWithScene } from '#shared/types/scene'
 import { Button } from '~/components/ui/button'
@@ -94,6 +94,14 @@ const templates = Object.values(roomThemes).map((t) => ({ id: t.id as RoomThemeI
           <div class="flex items-start justify-between gap-3">
             <NuxtLink :to="`/editor/${s.id}`" class="font-display text-xl leading-tight font-bold hover:text-link">{{ s.name }}</NuxtLink>
             <span
+              v-if="s.hidden"
+              class="flex shrink-0 items-center gap-1 rounded-full bg-[#fdecea] px-2.5 py-1 text-xs font-semibold text-[#8f2a17]"
+              title="Retiré de la galerie après un signalement : son lien public ne fonctionne plus."
+            >
+              <EyeOff class="size-3.5" aria-hidden="true" />Masqué
+            </span>
+            <span
+              v-else
               class="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold"
               :class="s.isPublic ? 'bg-[#d2f5e8] text-[#155c44]' : 'bg-lilac text-subtle'"
             >
@@ -102,6 +110,7 @@ const templates = Object.values(roomThemes).map((t) => ({ id: t.id as RoomThemeI
               {{ s.isPublic ? 'Public' : 'Privé' }}
             </span>
           </div>
+          <p v-if="s.hidden" class="text-[13px] leading-relaxed text-[#8f2a17]">Retiré de la galerie par la modération : il n’est plus visible publiquement.</p>
           <p class="text-[13px] text-muted">Modifié le {{ dateFormat.format(new Date(s.updatedAt)) }} · {{ s.scene.objects.length }} objets<template v-if="s.isPublic"> · {{ s.likeCount }} j’aime</template></p>
           <div class="mt-auto flex flex-wrap gap-2 pt-1">
             <template v-if="confirmingId === s.id">
@@ -117,7 +126,7 @@ const templates = Object.values(roomThemes).map((t) => ({ id: t.id as RoomThemeI
             </template>
             <template v-else>
               <Button size="sm" as-child><NuxtLink :to="`/editor/${s.id}`">Ouvrir l’éditeur</NuxtLink></Button>
-              <Button v-if="s.isPublic" variant="outline" size="sm" as-child>
+              <Button v-if="s.isPublic && !s.hidden" variant="outline" size="sm" as-child>
                 <NuxtLink :to="`/setup/${s.slug}`"><Eye class="size-4" />Voir</NuxtLink>
               </Button>
               <Button variant="ghost" size="sm" class="ml-auto" :aria-label="`Supprimer ${s.name}`" @click="confirmingId = s.id">
