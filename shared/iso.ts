@@ -86,6 +86,7 @@ function tubeSamples(part: ProceduralPart): ProceduralPart[] {
 }
 
 function partToBoxes(part: ProceduralPart, color: string, origin?: [number, number, number], rotationDeg?: number, scale?: number): IsoBox[] {
+  if (part.noIso) return []
   const parts = part.tube ? tubeSamples(part) : [part]
   return parts.map((p) => partToBox(p, color, origin, rotationDeg, scale))
 }

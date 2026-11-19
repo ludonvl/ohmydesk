@@ -1,3 +1,4 @@
+import { chairFamily, chairItems } from './families/chairs'
 import { desktopFamily, desktopItems, laptopFamily, laptopItems } from './families/computers'
 import { deskFamily, deskItems } from './families/desks'
 import { neonFamily, neonItems } from './families/neons'
@@ -87,32 +88,7 @@ export const catalogItems: CatalogItem[] = [
     model: { type: 'procedural', parts: [box([0.8, 0.004, 0.35], [0, 0.002, 0], 'mat')] },
     tags: ['tapis', 'desk mat'],
   },
-  {
-    id: 'chair-ergo',
-    slug: 'chaise-ergonomique',
-    name: 'Chaise ergonomique',
-    category: 'seating',
-    description: 'Chaise de bureau à roulettes avec accoudoirs.',
-    dimensions: { width: 0.6, height: 1.15, depth: 0.6 },
-    defaultScale: 1,
-    placement: 'floor',
-    materials: [
-      { slot: 'main', label: 'Assise', default: '#FF6B35', customizable: true },
-      { slot: 'frame', label: 'Structure', default: INK, customizable: true },
-    ],
-    model: {
-      type: 'procedural',
-      parts: [
-        cyl([0.56, 0.04, 0.56], [0, 0.03, 0], 'frame'),
-        cyl([0.05, 0.38, 0.05], [0, 0.24, 0], 'frame'),
-        box([0.5, 0.08, 0.48], [0, 0.47, 0], 'main', 0.03),
-        box([0.04, 0.2, 0.3], [-0.27, 0.56, -0.02], 'frame', 0.01),
-        box([0.04, 0.2, 0.3], [0.27, 0.56, -0.02], 'frame', 0.01),
-        box([0.48, 0.62, 0.06], [0, 0.85, -0.24], 'main', 0.025),
-      ],
-    },
-    tags: ['chaise', 'siège', 'chair'],
-  },
+  ...chairItems,
   {
     id: 'lamp-architect',
     slug: 'lampe-architecte',
@@ -305,7 +281,7 @@ export function getCatalogItem(id: string): CatalogItem | undefined {
   return catalogById.get(id)
 }
 
-export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, desktopFamily, laptopFamily, neonFamily, posterFamily]
+export const catalogFamilies: CatalogFamily[] = [deskFamily, screenFamily, desktopFamily, laptopFamily, chairFamily, neonFamily, posterFamily]
 const familyById: ReadonlyMap<string, CatalogFamily> = new Map(catalogFamilies.map((f) => [f.id, f]))
 
 export function getFamily(id: string | undefined): CatalogFamily | undefined {

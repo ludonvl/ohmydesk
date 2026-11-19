@@ -33,6 +33,8 @@ export interface ProceduralPart {
   art?: string
   /** Pièce dessinée seulement dans les vignettes isométriques (évocation d'un visuel peint). */
   isoOnly?: boolean
+  /** Pièce absente des vignettes isométriques (ex. pièce tournée qu'elles ne savent pas dessiner). */
+  noIso?: boolean
 }
 
 /**
