@@ -1,48 +1,51 @@
 <script setup lang="ts">
-import { Copy, Rotate3d, RotateCw, Scan, Trash2, ZoomIn, ZoomOut } from 'lucide-vue-next'
+import { Camera, Eye, EyeOff, Minus, Plus, RotateCw, Scan } from 'lucide-vue-next'
 
-defineProps<{ hasSelection: boolean }>()
+defineProps<{ zoomLabel: string; preview: boolean }>()
 const emit = defineEmits<{
-  rotateObject: []
-  duplicate: []
-  remove: []
+  rotateCamera: []
+  reset: []
+  capture: []
   zoomIn: []
   zoomOut: []
-  reset: []
-  rotateCamera: []
+  togglePreview: []
 }>()
 
-const btn =
-  'grid size-11 place-items-center rounded-[11px] text-chrome-text transition-colors hover:bg-chrome-line disabled:pointer-events-none disabled:opacity-35'
+const btn = 'grid size-desk-control-md place-items-center rounded-desk-pill text-desk-ink transition-colors hover:bg-desk-surface-muted'
 </script>
 
 <template>
-  <div
-    role="toolbar"
-    aria-label="Outils de la scène"
-    class="flex items-center gap-0.5 rounded-2xl bg-ink p-1.5 text-chrome-text shadow-[0_12px_32px_rgba(22,21,31,0.28)]"
-  >
-    <button :class="btn" :disabled="!hasSelection" aria-label="Pivoter l’objet (R)" title="Pivoter l’objet (R)" @click="emit('rotateObject')">
-      <RotateCw class="size-[19px]" />
-    </button>
-    <button :class="btn" :disabled="!hasSelection" aria-label="Dupliquer (D)" title="Dupliquer (D)" @click="emit('duplicate')">
-      <Copy class="size-[19px]" />
-    </button>
-    <button :class="btn" :disabled="!hasSelection" aria-label="Supprimer (Suppr)" title="Supprimer (Suppr)" @click="emit('remove')">
-      <Trash2 class="size-[19px]" />
-    </button>
-    <div class="mx-1.5 h-[26px] w-px bg-[#33313f]" aria-hidden="true" />
-    <button :class="btn" aria-label="Dézoomer" title="Dézoomer" @click="emit('zoomOut')">
-      <ZoomOut class="size-[19px]" />
-    </button>
-    <button :class="btn" aria-label="Zoomer" title="Zoomer" @click="emit('zoomIn')">
-      <ZoomIn class="size-[19px]" />
-    </button>
-    <button :class="btn" aria-label="Recadrer la vue" title="Recadrer la vue" @click="emit('reset')">
-      <Scan class="size-[19px]" />
-    </button>
-    <button :class="btn" aria-label="Pivoter la caméra de 90°" title="Pivoter la caméra de 90°" @click="emit('rotateCamera')">
-      <Rotate3d class="size-[19px]" />
-    </button>
+  <div class="flex flex-wrap items-center justify-center gap-2.5">
+    <div role="toolbar" aria-label="Vue" class="desk-float flex items-center gap-0.5 rounded-desk-pill p-1">
+      <button type="button" :class="btn" aria-label="Pivoter la pièce de 90° dans le sens horaire" title="Pivoter de 90°" @click="emit('rotateCamera')">
+        <RotateCw class="size-[18px]" :stroke-width="1.8" />
+      </button>
+      <button type="button" :class="btn" aria-label="Recentrer la vue" title="Recentrer" @click="emit('reset')">
+        <Scan class="size-[18px]" :stroke-width="1.8" />
+      </button>
+      <button type="button" :class="btn" aria-label="Télécharger une capture de la scène" title="Capture" @click="emit('capture')">
+        <Camera class="size-[18px]" :stroke-width="1.8" />
+      </button>
+      <button
+        type="button"
+        :class="[btn, preview ? '!bg-desk-active !text-desk-on-active' : '']"
+        :aria-label="preview ? 'Quitter l’aperçu' : 'Aperçu'"
+        :title="preview ? 'Quitter l’aperçu' : 'Aperçu'"
+        :aria-pressed="preview"
+        @click="emit('togglePreview')"
+      >
+        <EyeOff v-if="preview" class="size-[18px]" :stroke-width="1.8" />
+        <Eye v-else class="size-[18px]" :stroke-width="1.8" />
+      </button>
+    </div>
+    <div class="desk-float flex items-center gap-0.5 rounded-desk-pill p-1">
+      <button type="button" :class="btn" aria-label="Dézoomer" title="Dézoomer" @click="emit('zoomOut')">
+        <Minus class="size-[18px]" :stroke-width="1.8" />
+      </button>
+      <span class="min-w-12 text-center text-desk-label text-desk-ink" aria-live="polite">{{ zoomLabel }}</span>
+      <button type="button" :class="btn" aria-label="Zoomer" title="Zoomer" @click="emit('zoomIn')">
+        <Plus class="size-[18px]" :stroke-width="1.8" />
+      </button>
+    </div>
   </div>
 </template>

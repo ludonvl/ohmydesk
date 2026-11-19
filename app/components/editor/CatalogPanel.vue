@@ -1,27 +1,42 @@
 <script setup lang="ts">
-import { Search, Trash2 } from 'lucide-vue-next'
-import { catalogCategories, catalogItems, getCatalogItem, getCategoryName } from '#shared/catalog/items'
-import type { CatalogItem } from '#shared/catalog/types'
+import { Crosshair, Plus, Search, X } from 'lucide-vue-next'
+import { catalogItems, getCatalogItem, getCategoryName } from '#shared/catalog/items'
+import type { CatalogItem, CategorySlug } from '#shared/catalog/types'
 import { CATALOG_DRAG_TYPE } from '~/lib/dnd'
 import { useEditorStore } from '~/stores/editor'
 
+const props = defineProps<{ category: CategorySlug; mode: 'catalog' | 'scene' }>()
+const emit = defineEmits<{ close: []; showCatalog: [] }>()
+
 const editor = useEditorStore()
-const tab = ref<'catalog' | 'scene'>('catalog')
 const query = ref('')
-const category = ref<string>('all')
+watch(() => props.category, () => (query.value = ''))
 
+const categoryName = computed(() => getCategoryName(props.category))
 const normalize = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
-
-const items = computed(() => {
+const matches = (item: CatalogItem) => {
   const q = normalize(query.value.trim())
-  return catalogItems.filter((item) => {
-    if (category.value !== 'all' && item.category !== category.value) return false
-    if (!q) return true
-    return [item.name, item.description, ...item.tags].some((t) => normalize(t).includes(q))
-  })
+  return !q || [item.name, item.description, ...item.tags].some((t) => normalize(t).includes(q))
+}
+
+/** Mode Catalogue : tous les objets de la catégorie. */
+const catalogList = computed(() => catalogItems.filter((item) => item.category === props.category && matches(item)))
+
+/** Mode Scène : objets présents dans la pièce, regroupés par modèle. */
+const sceneList = computed(() => {
+  const groups = new Map<string, { item: CatalogItem; ids: string[] }>()
+  for (const obj of editor.scene.objects) {
+    const item = getCatalogItem(obj.catalogId)
+    if (!item || item.category !== props.category || !matches(item)) continue
+    const group = groups.get(item.id) ?? { item, ids: [] }
+    group.ids.push(obj.id)
+    groups.set(item.id, group)
+  }
+  return [...groups.values()]
 })
 
-const categories = computed(() => [{ slug: 'all', name: 'Tout' }, ...catalogCategories])
+const count = computed(() => (props.mode === 'scene' ? sceneList.value.reduce((n, g) => n + g.ids.length, 0) : catalogList.value.length))
+const subtitle = computed(() => (props.mode === 'scene' ? `${count.value} dans ta scène` : `${count.value} au catalogue`))
 
 function onDragStart(e: DragEvent, item: CatalogItem) {
   if (!e.dataTransfer) return
@@ -29,116 +44,120 @@ function onDragStart(e: DragEvent, item: CatalogItem) {
   e.dataTransfer.effectAllowed = 'copy'
 }
 
-function sceneLabel(catalogId: string) {
-  return getCatalogItem(catalogId)?.name ?? catalogId
+/** Sélectionne l'exemplaire suivant de ce modèle dans la scène (un clic de plus passe au suivant). */
+function selectInScene(ids: string[]) {
+  const current = editor.selectedId ? ids.indexOf(editor.selectedId) : -1
+  editor.selectedId = ids[(current + 1) % ids.length] ?? null
 }
 </script>
 
 <template>
-  <aside aria-label="Catalogue d'objets" class="flex min-h-0 w-full flex-col border-chrome-line bg-chrome-panel md:w-[300px] md:border-r">
-    <div class="flex gap-1 px-3 pt-3" role="tablist">
+  <section :aria-label="categoryName" class="desk-float flex h-full min-h-0 flex-col overflow-hidden rounded-desk-2xl">
+    <div class="flex items-center justify-between py-4 pr-4 pl-6">
+      <div class="flex flex-col gap-0.5">
+        <h2 class="text-desk-panel-title text-desk-ink">{{ categoryName }}</h2>
+        <span class="text-desk-caption text-desk-ink-muted">{{ subtitle }}</span>
+      </div>
       <button
-        role="tab"
-        :aria-selected="tab === 'catalog'"
-        class="h-[38px] flex-1 rounded-[10px] text-[13px] font-semibold"
-        :class="tab === 'catalog' ? 'bg-chrome-line text-chrome-text' : 'text-chrome-muted hover:bg-chrome-raised'"
-        @click="tab = 'catalog'"
+        type="button"
+        class="grid size-desk-control-md shrink-0 place-items-center rounded-desk-pill bg-desk-surface-muted text-desk-ink"
+        aria-label="Fermer le panneau"
+        @click="emit('close')"
       >
-        Catalogue
-      </button>
-      <button
-        role="tab"
-        :aria-selected="tab === 'scene'"
-        class="h-[38px] flex-1 rounded-[10px] text-[13px] font-semibold"
-        :class="tab === 'scene' ? 'bg-chrome-line text-chrome-text' : 'text-chrome-muted hover:bg-chrome-raised'"
-        @click="tab = 'scene'"
-      >
-        Scène · {{ editor.scene.objects.length }}
+        <X class="size-4" :stroke-width="2" />
       </button>
     </div>
 
-    <template v-if="tab === 'catalog'">
-      <div class="flex flex-col gap-1.5 px-4 pt-3.5 pb-1.5">
-        <label for="catalog-search" class="text-xs font-medium text-chrome-muted">Rechercher un objet</label>
-        <div class="relative">
-          <Search class="pointer-events-none absolute top-3 left-3 size-4 text-chrome-muted" aria-hidden="true" />
-          <input
-            id="catalog-search"
-            v-model="query"
-            type="search"
-            placeholder="Écran, plante, lampe…"
-            class="h-10 w-full rounded-[10px] border border-chrome-line bg-chrome-raised pr-3 pl-9 text-sm text-chrome-text placeholder:text-chrome-muted/70 focus:outline-none focus-visible:border-tangerine"
-          >
-        </div>
-      </div>
-      <div class="flex flex-wrap gap-1.5 px-4 pt-2 pb-3">
-        <button
-          v-for="c in categories"
-          :key="c.slug"
-          class="h-8 rounded-full border px-3 text-[12.5px] font-medium"
-          :class="category === c.slug ? 'border-chrome-text bg-chrome-text text-ink' : 'border-[#3a3848] text-chrome-text hover:bg-chrome-raised'"
-          :aria-pressed="category === c.slug"
-          @click="category = c.slug"
+    <div class="px-4 pb-3">
+      <label class="flex h-11 items-center gap-2 rounded-desk-pill bg-desk-surface-sunken px-4 text-desk-ink-muted focus-within:ring-2 focus-within:ring-desk-active">
+        <Search class="size-4 shrink-0" aria-hidden="true" />
+        <span class="sr-only">Rechercher dans {{ categoryName }}</span>
+        <input
+          v-model="query"
+          type="search"
+          :placeholder="`Rechercher dans ${categoryName.toLowerCase()}…`"
+          class="min-w-0 flex-1 bg-transparent text-desk-body text-desk-ink placeholder:text-desk-ink-muted focus:outline-none"
         >
-          {{ c.name }}
-        </button>
-      </div>
-      <div class="min-h-0 flex-1 overflow-auto px-4 pb-4">
-        <div class="mt-1 mb-2.5 flex items-baseline justify-between">
-          <h2 class="text-[13px] font-semibold text-chrome-text">{{ items.length }} objets</h2>
-          <span class="text-xs text-chrome-muted">Glisse dans la scène</span>
-        </div>
-        <div v-if="items.length" class="grid grid-cols-2 gap-2.5">
-          <button
-            v-for="item in items"
+      </label>
+    </div>
+
+    <div class="min-h-0 flex-1 overflow-y-auto px-4 pt-1 pb-4">
+      <!-- Catalogue -->
+      <template v-if="mode === 'catalog'">
+        <div v-if="catalogList.length" class="grid grid-cols-2 gap-2.5">
+          <div
+            v-for="item in catalogList"
             :key="item.id"
             draggable="true"
-            class="flex cursor-grab flex-col gap-2 rounded-[14px] border border-chrome-line bg-chrome-raised p-2 text-left text-chrome-text hover:border-[#4a4760] active:cursor-grabbing"
-            :title="`Ajouter « ${item.name} » (ou glisser dans la scène)`"
+            class="flex cursor-grab flex-col gap-2.5 rounded-desk-xl bg-desk-surface p-2 pb-3 ring-1 ring-desk-line transition-shadow hover:ring-desk-line-strong active:cursor-grabbing"
+            :title="`Glisse « ${item.name} » dans la scène, ou clique sur +`"
             @dragstart="onDragStart($event, item)"
-            @click="editor.addObject(item.id)"
           >
-            <span class="block h-[84px] rounded-[9px] bg-[#2b2938] p-2">
+            <span class="block h-[120px] rounded-desk-lg bg-desk-surface-sunken p-3">
               <CatalogThumb :item="item" />
             </span>
-            <span class="flex flex-col gap-0.5 px-0.5 pb-0.5">
-              <span class="text-[13px] font-semibold">{{ item.name }}</span>
-              <span class="text-xs text-chrome-muted">{{ getCategoryName(item.category) }}</span>
+            <span class="flex items-end justify-between gap-2 px-1">
+              <span class="flex min-w-0 flex-col gap-0.5">
+                <span class="text-sm leading-tight font-semibold text-desk-ink">{{ item.name }}</span>
+                <span class="truncate text-desk-caption text-desk-ink-muted">{{ item.description }}</span>
+              </span>
+              <button
+                type="button"
+                class="grid size-desk-control-sm shrink-0 place-items-center rounded-desk-pill bg-desk-surface-muted text-desk-ink hover:bg-desk-line"
+                :aria-label="`Ajouter « ${item.name} » à la scène`"
+                title="Ajouter à la scène"
+                @click="editor.addObject(item.id)"
+              >
+                <Plus class="size-4" :stroke-width="2" />
+              </button>
             </span>
+          </div>
+        </div>
+        <div v-else class="flex flex-col items-center gap-3 rounded-desk-xl bg-desk-surface-sunken p-6 text-center">
+          <p class="text-sm text-desk-ink-soft">Aucun objet ne correspond à « {{ query }} ».</p>
+          <button type="button" class="h-11 rounded-desk-pill bg-desk-active px-4 text-sm font-semibold text-desk-on-active" @click="query = ''">
+            Tout afficher
           </button>
         </div>
-        <p v-else class="rounded-xl border border-dashed border-chrome-line p-4 text-[13px] text-chrome-muted">
-          Aucun objet ne correspond à « {{ query }} ».
-          <button class="font-semibold text-chrome-text underline" @click="query = ''; category = 'all'">Tout afficher</button>
-        </p>
-      </div>
-    </template>
+      </template>
 
-    <div v-else class="min-h-0 flex-1 overflow-auto p-3">
-      <ul v-if="editor.scene.objects.length" class="flex flex-col gap-1">
-        <li v-for="obj in editor.scene.objects" :key="obj.id" class="flex items-center gap-1">
-          <button
-            class="flex h-10 flex-1 items-center rounded-[10px] px-3 text-left text-[13px] font-medium"
-            :class="editor.selectedId === obj.id ? 'bg-chrome-line text-chrome-text' : 'text-chrome-text hover:bg-chrome-raised'"
-            :aria-pressed="editor.selectedId === obj.id"
-            @click="editor.selectedId = obj.id"
+      <!-- Scène -->
+      <template v-else>
+        <div v-if="sceneList.length" class="grid grid-cols-2 gap-2.5">
+          <div
+            v-for="group in sceneList"
+            :key="group.item.id"
+            class="flex flex-col gap-2.5 rounded-desk-xl bg-desk-surface p-2 pb-3"
+            :class="group.ids.includes(editor.selectedId ?? '') ? 'ring-2 ring-desk-active' : 'ring-1 ring-desk-line'"
           >
-            {{ sceneLabel(obj.catalogId) }}
+            <span class="relative block h-[120px] rounded-desk-lg bg-desk-surface-sunken p-3">
+              <CatalogThumb :item="group.item" />
+              <span class="absolute top-2 left-2 rounded-desk-pill bg-desk-active px-2 py-0.5 text-desk-badge text-desk-on-active">×{{ group.ids.length }}</span>
+            </span>
+            <span class="flex items-end justify-between gap-2 px-1">
+              <span class="flex min-w-0 flex-col gap-0.5">
+                <span class="text-sm leading-tight font-semibold text-desk-ink">{{ group.item.name }}</span>
+                <span class="truncate text-desk-caption text-desk-ink-muted">{{ group.item.description }}</span>
+              </span>
+              <button
+                type="button"
+                class="grid size-desk-control-sm shrink-0 place-items-center rounded-desk-pill bg-desk-surface-muted text-desk-ink hover:bg-desk-line"
+                :aria-label="`Sélectionner « ${group.item.name} » dans la scène`"
+                title="Sélectionner dans la scène"
+                @click="selectInScene(group.ids)"
+              >
+                <Crosshair class="size-4" :stroke-width="2" />
+              </button>
+            </span>
+          </div>
+        </div>
+        <div v-else class="flex flex-col items-center gap-3 rounded-desk-xl bg-desk-surface-sunken p-6 text-center">
+          <p class="text-sm text-desk-ink-soft">Aucun objet de cette catégorie dans ta scène pour l’instant.</p>
+          <button type="button" class="h-11 rounded-desk-pill bg-desk-active px-4 text-sm font-semibold text-desk-on-active" @click="emit('showCatalog')">
+            Parcourir le catalogue
           </button>
-          <button
-            class="grid size-10 place-items-center rounded-[10px] text-chrome-muted hover:bg-chrome-raised hover:text-chrome-text"
-            :aria-label="`Supprimer ${sceneLabel(obj.catalogId)}`"
-            :title="`Supprimer ${sceneLabel(obj.catalogId)}`"
-            @click="editor.removeObject(obj.id)"
-          >
-            <Trash2 class="size-4" />
-          </button>
-        </li>
-      </ul>
-      <p v-else class="rounded-xl border border-dashed border-chrome-line p-4 text-[13px] text-chrome-muted">
-        La pièce est vide. Ajoute des objets depuis le catalogue.
-        <button class="font-semibold text-chrome-text underline" @click="tab = 'catalog'">Ouvrir le catalogue</button>
-      </p>
+        </div>
+      </template>
     </div>
-  </aside>
+  </section>
 </template>

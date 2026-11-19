@@ -1,24 +1,13 @@
 <script setup lang="ts">
-import { Copy, Plus, Trash2 } from 'lucide-vue-next'
+import { Copy, Plus, Trash2, X } from 'lucide-vue-next'
 import { getCategoryName } from '#shared/catalog/items'
-import { roomThemes } from '#shared/themes'
-import type { Finish, RoomThemeId } from '#shared/types/scene'
-import { Button } from '~/components/ui/button'
+import type { Finish } from '#shared/types/scene'
+import { OBJECT_PALETTE, paletteColorName } from '~/lib/palette'
 import { useEditorStore } from '~/stores/editor'
 
+const emit = defineEmits<{ close: [] }>()
 const editor = useEditorStore()
 
-const PALETTE = [
-  { hex: '#FF6B35', name: 'Orange brûlé' },
-  { hex: '#A497FF', name: 'Lavande' },
-  { hex: '#4CC9A0', name: 'Menthe' },
-  { hex: '#FFCF5A', name: 'Moutarde' },
-  { hex: '#7E9C8F', name: 'Sauge' },
-  { hex: '#FF4FD8', name: 'Rose néon' },
-  { hex: '#24E1FF', name: 'Cyan' },
-  { hex: '#2E2C3D', name: 'Encre' },
-  { hex: '#F5F2EC', name: 'Coquille' },
-]
 const FINISHES: { id: Finish; label: string }[] = [
   { id: 'mat', label: 'Mat' },
   { id: 'satin', label: 'Satiné' },
@@ -37,9 +26,7 @@ const slots = computed(() => item.value?.materials.filter((m) => m.customizable)
 function slotColor(slot: string) {
   return obj.value?.colors[slot] ?? item.value?.materials.find((m) => m.slot === slot)?.default ?? '#ffffff'
 }
-function colorName(hex: string) {
-  return PALETTE.find((p) => p.hex.toLowerCase() === hex.toLowerCase())?.name ?? hex.toUpperCase()
-}
+const isCurrent = (slot: string, hex: string) => slotColor(slot).toLowerCase() === hex.toLowerCase()
 
 function setAxis(index: 0 | 1 | 2, e: Event) {
   if (!obj.value) return
@@ -56,45 +43,55 @@ function setScale(e: Event) {
   const v = Number.parseFloat((e.target as HTMLInputElement).value)
   if (obj.value && !Number.isNaN(v)) editor.updateObject(obj.value.id, { scale: Math.min(3, Math.max(0.25, v / 100)) })
 }
-function setRoomSize(key: 'width' | 'depth' | 'height', e: Event) {
-  const v = Number.parseFloat((e.target as HTMLInputElement).value)
-  if (!Number.isNaN(v)) editor.setRoom({ [key]: v })
-}
+
+const field =
+  'h-10 w-full rounded-desk-md bg-desk-surface-sunken px-3 text-sm font-medium text-desk-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-desk-active'
 </script>
 
 <template>
-  <aside aria-label="Propriétés" class="flex min-h-0 w-full flex-col overflow-auto border-chrome-line bg-chrome-panel text-chrome-text md:w-[300px] md:border-l">
-    <!-- Objet sélectionné -->
-    <template v-if="obj && item">
-      <div class="flex items-start gap-3 border-b border-chrome-line px-[18px] pt-[18px] pb-4">
-        <div class="flex flex-1 flex-col gap-1.5">
-          <span class="text-xs text-chrome-muted">Objet sélectionné</span>
-          <h2 class="font-display text-xl leading-tight font-bold tracking-tight">{{ item.name }}</h2>
-          <span class="self-start rounded-full bg-chrome-line px-2.5 py-0.5 text-xs font-medium">{{ getCategoryName(item.category) }}</span>
-        </div>
+  <section v-if="obj && item" :aria-label="`Réglages : ${item.name}`" class="desk-float flex h-full min-h-0 flex-col overflow-hidden rounded-desk-2xl">
+    <div class="flex items-start justify-between gap-3 py-4 pr-4 pl-6">
+      <div class="flex min-w-0 flex-col gap-0.5">
+        <h2 class="truncate text-desk-panel-title text-desk-ink">{{ item.name }}</h2>
+        <span class="text-desk-caption text-desk-ink-muted">
+          {{ getCategoryName(item.category) }} ·
+          {{ Math.round(item.dimensions.width * obj.scale * 100) }} × {{ Math.round(item.dimensions.depth * obj.scale * 100) }} ×
+          {{ Math.round(item.dimensions.height * obj.scale * 100) }} cm
+        </span>
       </div>
+      <button type="button" class="grid size-desk-control-md shrink-0 place-items-center rounded-desk-pill bg-desk-surface-muted text-desk-ink" aria-label="Fermer le panneau" @click="emit('close')">
+        <X class="size-4" :stroke-width="2" />
+      </button>
+    </div>
 
-      <section v-for="slot in slots" :key="slot.slot" class="flex flex-col gap-3 border-b border-chrome-line p-[18px]">
+    <div class="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-6 pt-2 pb-6">
+      <div v-for="slot in slots" :key="slot.slot" class="flex flex-col gap-2.5">
         <div class="flex items-baseline justify-between">
-          <h3 class="text-[13px] font-semibold">{{ slot.label }}</h3>
-          <span class="text-xs text-chrome-muted">{{ colorName(slotColor(slot.slot)) }}</span>
+          <h3 class="desk-overline">{{ slot.label }}</h3>
+          <span class="text-desk-caption text-desk-ink-soft">{{ paletteColorName(slotColor(slot.slot)) }}</span>
         </div>
-        <div class="flex flex-wrap gap-2.5">
+        <div role="radiogroup" :aria-label="`Couleur : ${slot.label}`" class="flex flex-wrap gap-1">
           <button
-            v-for="c in PALETTE"
+            v-for="c in OBJECT_PALETTE"
             :key="c.hex"
-            class="size-8 rounded-full border border-white/15"
-            :style="{
-              background: c.hex,
-              boxShadow: slotColor(slot.slot).toLowerCase() === c.hex.toLowerCase() ? '0 0 0 3px #1B1A25, 0 0 0 5px #ECEAF5' : undefined,
-            }"
+            type="button"
+            role="radio"
+            :aria-checked="isCurrent(slot.slot, c.hex)"
             :aria-label="c.name"
             :title="c.name"
-            :aria-pressed="slotColor(slot.slot).toLowerCase() === c.hex.toLowerCase()"
+            class="grid size-desk-control-md place-items-center rounded-desk-pill"
             @click="editor.setColor(obj.id, slot.slot, c.hex)"
-          />
-          <label class="relative grid size-8 cursor-pointer place-items-center rounded-full border border-dashed border-[#5a5670]" title="Couleur personnalisée">
-            <Plus class="size-4" aria-hidden="true" />
+          >
+            <span
+              class="size-7 rounded-desk-pill"
+              :class="isCurrent(slot.slot, c.hex) ? 'shadow-desk-ring-selected' : 'ring-1 ring-black/10 ring-inset'"
+              :style="{ background: c.hex }"
+            />
+          </button>
+          <label class="relative grid size-desk-control-md cursor-pointer place-items-center rounded-desk-pill" title="Couleur personnalisée">
+            <span class="grid size-7 place-items-center rounded-desk-pill border border-dashed border-desk-line-strong text-desk-ink-soft">
+              <Plus class="size-4" aria-hidden="true" />
+            </span>
             <span class="sr-only">Couleur personnalisée pour {{ slot.label }}</span>
             <input
               type="color"
@@ -104,127 +101,61 @@ function setRoomSize(key: 'width' | 'depth' | 'height', e: Event) {
             >
           </label>
         </div>
-      </section>
+      </div>
 
-      <section class="flex flex-col gap-3 border-b border-chrome-line p-[18px]">
-        <h3 class="text-[13px] font-semibold">Finition</h3>
-        <div class="flex gap-0.5 rounded-[10px] bg-chrome-raised p-[3px]" role="group" aria-label="Finition">
+      <div class="flex flex-col gap-2.5">
+        <h3 class="desk-overline">Finition</h3>
+        <div role="radiogroup" aria-label="Finition" class="grid grid-cols-3 gap-1 rounded-desk-pill bg-desk-surface-sunken p-1">
           <button
             v-for="f in FINISHES"
             :key="f.id"
-            class="h-[34px] flex-1 rounded-lg text-[13px] font-medium"
-            :class="obj.finish === f.id ? 'bg-[#3a3848] text-white' : 'text-chrome-muted hover:text-chrome-text'"
-            :aria-pressed="obj.finish === f.id"
+            type="button"
+            role="radio"
+            :aria-checked="obj.finish === f.id"
+            class="h-10 rounded-desk-pill text-sm font-semibold"
+            :class="obj.finish === f.id ? 'bg-desk-surface text-desk-ink shadow-desk-control' : 'text-desk-ink-soft'"
             @click="editor.setFinish(obj.id, f.id)"
           >
             {{ f.label }}
           </button>
         </div>
-      </section>
+      </div>
 
-      <section class="flex flex-col gap-3 border-b border-chrome-line p-[18px]">
-        <h3 class="text-[13px] font-semibold">Position <span class="font-normal text-chrome-muted">(m)</span></h3>
+      <div class="flex flex-col gap-2.5">
+        <h3 class="desk-overline">Position <span class="normal-case">(m)</span></h3>
         <div class="grid grid-cols-3 gap-2">
-          <label v-for="axis in AXES" :key="axis.label" class="flex flex-col gap-1 text-xs text-chrome-muted">
+          <label v-for="axis in AXES" :key="axis.label" class="flex flex-col gap-1 text-desk-caption text-desk-ink-muted">
             {{ axis.label }}
-            <input
-              :value="obj.position[axis.index].toFixed(2)"
-              inputmode="decimal"
-              class="h-9 w-full rounded-lg border border-chrome-line bg-chrome-raised px-2.5 text-[13px] font-medium text-chrome-text focus:outline-none focus-visible:border-tangerine"
-              @change="setAxis(axis.index, $event)"
-            >
+            <input :value="obj.position[axis.index].toFixed(2)" inputmode="decimal" :class="field" @change="setAxis(axis.index, $event)">
           </label>
         </div>
-        <div class="mt-1 flex items-baseline justify-between">
-          <label for="inspector-rotation" class="text-[13px] font-semibold">Rotation</label>
-          <span class="text-[13px] font-semibold">{{ obj.rotation }}°</span>
-        </div>
-        <input id="inspector-rotation" type="range" min="0" max="345" step="15" :value="obj.rotation" class="w-full accent-tangerine" @change="setRotation">
-        <div class="flex gap-2">
-          <Button variant="chrome" size="sm" class="flex-1" @click="editor.rotateObject(obj.id, -90)">−90°</Button>
-          <Button variant="chrome" size="sm" class="flex-1" @click="editor.rotateObject(obj.id, 90)">+90°</Button>
-        </div>
-        <label class="mt-1 flex items-center justify-between gap-3 text-[13px] font-semibold">
-          Échelle (%)
-          <input
-            type="number"
-            min="25"
-            max="300"
-            step="5"
-            :value="Math.round(obj.scale * 100)"
-            class="h-9 w-24 rounded-lg border border-chrome-line bg-chrome-raised px-2.5 text-[13px] font-medium text-chrome-text"
-            @change="setScale"
-          >
-        </label>
-      </section>
-
-      <section class="flex flex-col gap-1.5 p-[18px]">
-        <h3 class="text-[13px] font-semibold">Dimensions</h3>
-        <p class="text-[13px] text-chrome-muted">
-          {{ Math.round(item.dimensions.width * obj.scale * 100) }} × {{ Math.round(item.dimensions.depth * obj.scale * 100) }} ×
-          {{ Math.round(item.dimensions.height * obj.scale * 100) }} cm
-        </p>
-      </section>
-
-      <div class="flex-1" />
-      <div class="flex gap-2 border-t border-chrome-line px-[18px] py-4">
-        <Button variant="chrome" size="sm" class="h-10 flex-1" @click="editor.duplicateObject(obj.id)">
-          <Copy class="size-4" />Dupliquer
-        </Button>
-        <Button variant="destructive" size="sm" class="h-10 flex-1" @click="editor.removeObject(obj.id)">
-          <Trash2 class="size-4" />Supprimer
-        </Button>
       </div>
-    </template>
 
-    <!-- Rien de sélectionné : réglages de la pièce -->
-    <template v-else>
-      <div class="border-b border-chrome-line px-[18px] pt-[18px] pb-4">
-        <span class="text-xs text-chrome-muted">Aucun objet sélectionné</span>
-        <h2 class="font-display text-xl font-bold tracking-tight">La pièce</h2>
-      </div>
-      <section class="flex flex-col gap-3 border-b border-chrome-line p-[18px]">
-        <h3 class="text-[13px] font-semibold">Ambiance</h3>
-        <div class="flex flex-col gap-2">
-          <button
-            v-for="theme in Object.values(roomThemes)"
-            :key="theme.id"
-            class="flex items-center gap-3 rounded-xl border p-3 text-left"
-            :class="editor.scene.room.theme === theme.id ? 'border-tangerine bg-chrome-raised' : 'border-chrome-line hover:bg-chrome-raised'"
-            :aria-pressed="editor.scene.room.theme === theme.id"
-            @click="editor.setRoom({ theme: theme.id as RoomThemeId })"
-          >
-            <span class="flex h-8 w-12 overflow-hidden rounded-md" aria-hidden="true">
-              <span class="flex-1" :style="{ background: theme.wall }" />
-              <span class="flex-1" :style="{ background: theme.floor }" />
-              <span class="w-3" :style="{ background: theme.swatch }" />
-            </span>
-            <span class="flex flex-col">
-              <span class="text-[13px] font-semibold">{{ theme.label }}</span>
-              <span class="text-xs text-chrome-muted">{{ theme.description }}</span>
-            </span>
-          </button>
+      <div class="flex flex-col gap-2.5">
+        <div class="flex items-baseline justify-between">
+          <label for="inspector-rotation" class="desk-overline">Rotation</label>
+          <span class="text-desk-label text-desk-ink">{{ obj.rotation }}°</span>
         </div>
-      </section>
-      <section class="flex flex-col gap-3 p-[18px]">
-        <h3 class="text-[13px] font-semibold">Dimensions <span class="font-normal text-chrome-muted">(m)</span></h3>
-        <label class="flex flex-col gap-1 text-xs text-chrome-muted">
-          Largeur · {{ editor.scene.room.width.toFixed(1) }} m
-          <input type="range" min="2" max="6" step="0.5" :value="editor.scene.room.width" class="accent-tangerine" @change="setRoomSize('width', $event)">
-        </label>
-        <label class="flex flex-col gap-1 text-xs text-chrome-muted">
-          Profondeur · {{ editor.scene.room.depth.toFixed(1) }} m
-          <input type="range" min="2" max="6" step="0.5" :value="editor.scene.room.depth" class="accent-tangerine" @change="setRoomSize('depth', $event)">
-        </label>
-        <label class="flex flex-col gap-1 text-xs text-chrome-muted">
-          Hauteur sous plafond · {{ editor.scene.room.height.toFixed(1) }} m
-          <input type="range" min="2" max="3.5" step="0.1" :value="editor.scene.room.height" class="accent-tangerine" @change="setRoomSize('height', $event)">
-        </label>
-        <label class="mt-1 flex items-center justify-between text-[13px] font-semibold">
-          Afficher les murs
-          <input type="checkbox" class="size-4 accent-tangerine" :checked="editor.scene.room.walls" @change="editor.setRoom({ walls: ($event.target as HTMLInputElement).checked })">
-        </label>
-      </section>
-    </template>
-  </aside>
+        <input id="inspector-rotation" type="range" min="0" max="345" step="15" :value="obj.rotation" class="w-full accent-desk-active" @change="setRotation">
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" class="h-10 rounded-desk-pill bg-desk-surface-sunken text-sm font-semibold text-desk-ink" @click="editor.rotateObject(obj.id, -90)">−90°</button>
+          <button type="button" class="h-10 rounded-desk-pill bg-desk-surface-sunken text-sm font-semibold text-desk-ink" @click="editor.rotateObject(obj.id, 90)">+90°</button>
+        </div>
+      </div>
+
+      <label class="flex items-center justify-between gap-3">
+        <span class="desk-overline">Échelle (%)</span>
+        <input type="number" min="25" max="300" step="5" :value="Math.round(obj.scale * 100)" :class="[field, '!w-24']" @change="setScale">
+      </label>
+    </div>
+
+    <div class="flex gap-2 border-t border-desk-line px-6 py-4">
+      <button type="button" class="flex h-11 flex-1 items-center justify-center gap-2 rounded-desk-pill bg-desk-surface-sunken text-sm font-semibold text-desk-ink" @click="editor.duplicateObject(obj.id)">
+        <Copy class="size-4" />Dupliquer
+      </button>
+      <button type="button" class="flex h-11 flex-1 items-center justify-center gap-2 rounded-desk-pill bg-desk-surface-sunken text-sm font-semibold text-desk-danger" @click="editor.removeObject(obj.id)">
+        <Trash2 class="size-4" />Supprimer
+      </button>
+    </div>
+  </section>
 </template>

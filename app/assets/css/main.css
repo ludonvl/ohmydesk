@@ -35,6 +35,98 @@
   --radius-3xl: 1.75rem;
 }
 
+/*
+ * Design tokens — éditeur v3 « pastilles flottantes »
+ * Source : design system « Oh My Desk » (Claude Design). Préfixe `desk-` pour ne pas
+ * entrer en conflit avec les tokens des pages publiques ci-dessus.
+ * Exemples : bg-desk-stage, bg-desk-surface, text-desk-ink-muted, rounded-desk-pill,
+ * shadow-desk-float, size-desk-control-md, w-desk-panel, text-desk-label.
+ */
+@theme {
+  /* Couleurs */
+  --color-desk-stage: #eceae6;          /* fond de la scène, sous la trame de points */
+  --color-desk-stage-dot: #d9d6d0;      /* points de la trame (pas de 20px) */
+  --color-desk-surface: #ffffff;        /* tout ce qui flotte : pastilles, barres, panneaux, cartes */
+  --color-desk-surface-sunken: #f5f3ef; /* vignettes d'objets, groupes de contrôles */
+  --color-desk-surface-muted: #f1efeb;  /* boutons ronds secondaires (« + », fermer) */
+  --color-desk-ink: #1a1917;            /* texte et icônes */
+  --color-desk-ink-soft: #55524c;       /* texte secondaire long (7:1 sur surface) */
+  --color-desk-ink-muted: #6b6862;      /* légendes, placeholders (5,5:1 sur surface) */
+  --color-desk-line: #e6e3de;           /* séparateurs */
+  --color-desk-line-strong: #d9d6d0;    /* survol de carte, interrupteur éteint */
+  --color-desk-active: #1a1917;         /* élément actif, bouton principal */
+  --color-desk-on-active: #ffffff;      /* texte sur active */
+  --color-desk-danger: #b42318;         /* icône Supprimer uniquement */
+
+  /* Typographie (famille : --font-sans, Inter) */
+  --text-desk-panel-title: 17px;
+  --text-desk-panel-title--line-height: 24px;
+  --text-desk-panel-title--font-weight: 700;
+  --text-desk-title: 15px;
+  --text-desk-title--line-height: 20px;
+  --text-desk-title--font-weight: 700;
+  --text-desk-body: 14px;
+  --text-desk-body--line-height: 20px;
+  --text-desk-body--font-weight: 500;
+  --text-desk-label: 13px;
+  --text-desk-label--line-height: 18px;
+  --text-desk-label--font-weight: 600;
+  --text-desk-caption: 12px;
+  --text-desk-caption--line-height: 16px;
+  --text-desk-caption--font-weight: 400;
+  --text-desk-overline: 12px;
+  --text-desk-overline--line-height: 16px;
+  --text-desk-overline--font-weight: 600;
+  --text-desk-overline--letter-spacing: 0.06em;
+  --text-desk-badge: 11px;
+  --text-desk-badge--line-height: 14px;
+  --text-desk-badge--font-weight: 700;
+
+  /* Arrondis */
+  --radius-desk-sm: 12px;   /* contour de sélection d'un objet */
+  --radius-desk-md: 16px;   /* choix de sol, petites tuiles */
+  --radius-desk-lg: 18px;   /* vignette dans une carte */
+  --radius-desk-xl: 24px;   /* carte d'objet */
+  --radius-desk-2xl: 28px;  /* panneau flottant */
+  --radius-desk-pill: 999px; /* pastilles, boutons, barres, champs */
+
+  /* Ombres */
+  --shadow-desk-float: 0 1px 2px rgba(26, 25, 23, 0.05), 0 6px 20px rgba(26, 25, 23, 0.06);
+  --shadow-desk-control: 0 1px 2px rgba(26, 25, 23, 0.08);
+  --shadow-desk-ring-selected: 0 0 0 2px #ffffff, 0 0 0 4px #1a1917;
+
+  /* Tailles et marges (utilisables avec size-*, w-*, h-*, p-*, inset-*…) */
+  --spacing-desk-edge: 20px;        /* marge des éléments flottants aux bords de l'écran */
+  --spacing-desk-control-sm: 36px;  /* pastille de couleur, « + » d'une carte */
+  --spacing-desk-control-md: 44px;  /* cible tactile minimale */
+  --spacing-desk-control-lg: 48px;  /* barre du haut, catégories, recherche */
+  --spacing-desk-control-xl: 60px;  /* bouton maison */
+  --spacing-desk-panel: 352px;      /* largeur du panneau de droite */
+}
+
+/* Fond de scène de l'éditeur : trame de points sur desk-stage */
+@utility desk-stage {
+  background-color: var(--color-desk-stage);
+  background-image: radial-gradient(var(--color-desk-stage-dot) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Surface flottante de base : blanche, sans bordure, ombre douce */
+@utility desk-float {
+  background-color: var(--color-desk-surface);
+  box-shadow: var(--shadow-desk-float);
+}
+
+/* Titre de section en capitales (panneau Pièce) */
+@utility desk-overline {
+  font-size: var(--text-desk-overline);
+  line-height: var(--text-desk-overline--line-height);
+  font-weight: var(--text-desk-overline--font-weight);
+  letter-spacing: var(--text-desk-overline--letter-spacing);
+  text-transform: uppercase;
+  color: var(--color-desk-ink-muted);
+}
+
 @layer base {
   html {
     -webkit-font-smoothing: antialiased;

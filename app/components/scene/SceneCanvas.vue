@@ -84,6 +84,8 @@ defineExpose({
   getCameraState: () => engine.value?.getCameraState(),
   getDropPlacement: (x: number, y: number, catalogId: string) => engine.value?.getDropPlacement(x, y, catalogId) ?? null,
   screenshot: () => engine.value?.screenshot(),
+  /** Ancre écran (haut-centre) d'un objet, en px relatifs au canvas ; null si absent. */
+  getObjectAnchor: (id: string) => (engine.value && !loading.value ? engine.value.getObjectAnchor(id) : null),
   /** Aperçu PNG à taille fixe ; null tant que le moteur n'est pas prêt. */
   capture: (size?: { width?: number; height?: number }) => (engine.value && !loading.value ? engine.value.capture(size) : null),
 })

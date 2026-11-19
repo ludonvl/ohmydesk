@@ -1,3 +1,4 @@
+import { Box3, Vector3 } from 'three'
 import type { CatalogItem } from '#shared/catalog/types'
 import type { Room, SceneData } from '#shared/types/scene'
 import { getRoomTheme } from '#shared/themes'
@@ -171,6 +172,37 @@ export class Engine {
     if (!placement) return null
     const p = placement.position
     return { position: [p.x, p.y, p.z], rotation: placement.rotation }
+  }
+
+  /**
+   * Point d'ancrage à l'écran d'un objet : milieu du haut de sa boîte englobante projetée,
+   * en pixels relatifs au conteneur du canvas. Sert à placer la barre contextuelle au-dessus de l'objet.
+   */
+  getObjectAnchor(id: string): { x: number; y: number } | null {
+    const group = this.objects.getObject3D(id)
+    if (!group) return null
+    const box = new Box3().setFromObject(group)
+    if (box.isEmpty()) return null
+    const camera = this.cameraManager.camera
+    camera.updateMatrixWorld()
+    const { width, height } = this.sceneManager.size
+    let minX = Infinity
+    let maxX = -Infinity
+    let minY = Infinity
+    const v = new Vector3()
+    for (const x of [box.min.x, box.max.x]) {
+      for (const y of [box.min.y, box.max.y]) {
+        for (const z of [box.min.z, box.max.z]) {
+          v.set(x, y, z).project(camera)
+          const sx = ((v.x + 1) / 2) * width
+          const sy = ((1 - v.y) / 2) * height
+          minX = Math.min(minX, sx)
+          maxX = Math.max(maxX, sx)
+          minY = Math.min(minY, sy)
+        }
+      }
+    }
+    return { x: (minX + maxX) / 2, y: minY }
   }
 
   /** Capture PNG de la vue courante, à la taille du canvas. */
