@@ -60,6 +60,8 @@ export interface OwnProfile {
   bio: string
   /** Avatar 3D ; null tant que la personne ne l'a pas créé. */
   avatar: Avatar | null
+  /** Avatar visible dans ses setups quand la personne est en ligne. */
+  showPresence: boolean
 }
 
 export interface LikeState {

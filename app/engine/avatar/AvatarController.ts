@@ -61,6 +61,8 @@ export class AvatarController {
   private y = 0
   private action: Action = { kind: 'idle', time: 1 }
   private placed = false
+  private appear = 1
+  private leaving = false
   private lastKind: Action['kind'] | null = null
 
   behavior: AvatarBehavior = 'wander'
@@ -78,21 +80,50 @@ export class AvatarController {
     return this.figure !== null
   }
 
+  /**
+   * Fait apparaître (petit « pop ») ou disparaître l'avatar. Il apparaît sur place s'il était en train
+   * de disparaître, sinon à l'avant de la pièce, tourné vers la caméra.
+   */
   setAvatar(avatar: Avatar | null) {
     if (!avatar) {
-      this.figure?.dispose()
-      this.figure = null
+      if (this.figure) this.leaving = true
       return
     }
+    this.leaving = false
     if (this.figure) {
       this.figure.setAvatar(avatar)
     } else {
       this.figure = new AvatarFigure(avatar)
       this.figure.idleMotion = !this.reducedMotion
+      this.figure.root.scale.setScalar(this.reducedMotion ? 1 : 0.001)
+      this.appear = this.reducedMotion ? 1 : 0
       this.root.add(this.figure.root)
       this.placed = false
       this.refresh()
     }
+  }
+
+  /** Échelle d'apparition/disparition (0 → 1). Retourne false une fois l'avatar retiré. */
+  private animatePresence(dt: number): boolean {
+    const figure = this.figure
+    if (!figure) return false
+    if (this.leaving) {
+      this.appear = this.reducedMotion ? 0 : Math.max(0, this.appear - dt / 0.25)
+      if (this.appear <= 0) {
+        figure.dispose()
+        this.figure = null
+        this.leaving = false
+        return false
+      }
+    } else if (this.appear < 1) {
+      this.appear = Math.min(1, this.appear + dt / 0.45)
+    }
+    // Léger dépassement à l'arrivée (easeOutBack), puis taille normale.
+    const t = this.appear
+    const c = 1.7
+    const scale = this.leaving ? t * t : 1 + (c + 1) * (t - 1) ** 3 + c * (t - 1) ** 2
+    figure.root.scale.setScalar(Math.max(0.001, scale))
+    return true
   }
 
   setVisible(visible: boolean) {
@@ -177,8 +208,12 @@ export class AvatarController {
 
   /** Avance le comportement. Retourne true tant que l'avatar est affiché (rendu continu). */
   update(dt: number): boolean {
+    if (!this.root.visible) return false
+    // Le rendu de l'image où l'avatar vient d'être retiré est nécessaire, d'où `hadFigure`.
+    const hadFigure = this.figure !== null
+    if (!this.animatePresence(dt)) return hadFigure
     const figure = this.figure
-    if (!figure || !this.grid || !this.root.visible) return false
+    if (!figure || !this.grid) return false
     figure.speed = 0
     if (this.behavior === 'static') {
       figure.sitting = false

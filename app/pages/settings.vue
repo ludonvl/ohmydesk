@@ -337,7 +337,7 @@ async function changePassword() {
 
     <!-- Avatar 3D -->
     <ClientOnly>
-      <AvatarEditor v-if="ownProfile" :avatar="ownProfile.avatar" @saved="ownProfile = $event" />
+      <AvatarEditor v-if="ownProfile" :avatar="ownProfile.avatar" :show-presence="ownProfile.showPresence" @saved="ownProfile = $event" />
     </ClientOnly>
 
     <!-- Adresse email -->

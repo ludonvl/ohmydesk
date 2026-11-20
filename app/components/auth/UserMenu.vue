@@ -28,6 +28,8 @@ const initials = computed(() =>
 )
 
 async function signOut() {
+  // Hors ligne tout de suite : l'avatar disparaît des setups sans attendre l'expiration de la présence.
+  await $fetch('/api/presence', { method: 'DELETE' }).catch(() => {})
   await authClient.signOut()
   reloadNuxtApp({ path: '/' })
 }

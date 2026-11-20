@@ -13,6 +13,11 @@ interface CanvasApi {
 const route = useRoute()
 const slug = computed(() => String(route.params.slug))
 const { data: setup, error } = await useFetch<SetupWithScene>(() => `/api/public/setups/${slug.value}`)
+
+// L'avatar de l'auteur n'apparaît que lorsqu'il est en ligne sur le site.
+const { online: authorOnline } = useAuthorPresence(() =>
+  setup.value?.authorAvatar && setup.value.scene.avatar?.enabled !== false ? setup.value.authorUsername : null,
+)
 if (error.value || !setup.value) {
   throw createError({ statusCode: 404, statusMessage: 'Setup introuvable', fatal: true })
 }
@@ -109,7 +114,7 @@ function onLike(state: LikeState) {
           :scene="setup.scene"
           :selected-id="highlighted"
           :options="{ mode: 'viewer', autoRotate, controls: true, zoom: true }"
-          :avatar="setup.authorAvatar"
+          :avatar="authorOnline ? setup.authorAvatar : null"
           :label="`Scène 3D du setup ${setup.name}`"
           @object-click="highlighted = $event"
         >

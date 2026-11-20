@@ -60,6 +60,11 @@ const toc = [
           <td>Exécution du contrat</td>
         </tr>
         <tr>
+          <td>Ton avatar 3D (apparence choisie) et, si tu actives l’option, ta présence en ligne : date et heure de ton dernier passage sur le site, mise à jour environ chaque minute tant qu’un onglet est ouvert</td>
+          <td>Afficher ton avatar dans tes setups publiés pendant que tu es en ligne</td>
+          <td>Consentement (option désactivée par défaut, retirable à tout moment dans les paramètres)</td>
+        </tr>
+        <tr>
           <td>Signalements que tu envoies : setup concerné, motif, précisions éventuelles</td>
           <td>Traiter les contenus signalés et retirer ceux qui enfreignent les conditions</td>
           <td>Intérêt légitime (modération) ; obligation légale (retrait des contenus illicites)</td>
@@ -96,7 +101,8 @@ const toc = [
       <li>son nom, sa description, sa scène 3D, son aperçu et le <strong>nom ou pseudo</strong> de ton compte deviennent visibles par tout le monde, dans la galerie et via son lien ;</li>
       <li>ton <strong>profil public</strong> (nom, identifiant, bio, setups publiés, nombre de « j’aime » reçus) est accessible depuis le setup ;</li>
       <li>il peut être affiché sur d’autres sites via le code d’intégration (iframe) ;</li>
-      <li>d’autres utilisateurs peuvent en créer une copie pour la modifier (« Remixer »).</li>
+      <li>d’autres utilisateurs peuvent en créer une copie pour la modifier (« Remixer ») ;</li>
+      <li>ton <strong>avatar 3D</strong>, si tu en as créé un, apparaît dans la pièce <strong>uniquement si tu as activé l’option de présence</strong> et pendant que tu es en ligne : les visiteurs, y compris sur les sites qui intègrent ton setup, peuvent ainsi savoir que tu es connecté.</li>
     </ul>
     <p>
       Le nombre de « j’aime » d’un setup est public, mais pas la liste des personnes qui l’ont aimé. Ton adresse email n’est jamais affichée publiquement,
@@ -121,6 +127,7 @@ const toc = [
     <ul>
       <li><strong>Compte, profil, setups et « j’aime »</strong> : tant que ton compte existe. Quand tu supprimes ton compte depuis les paramètres, ils sont effacés immédiatement, aperçus compris.</li>
       <li><strong>Signalements</strong> : tant que le setup signalé existe ; ils sont effacés avec lui, ou avec ton compte.</li>
+      <li><strong>Présence en ligne</strong> : seule la date de ton dernier passage est gardée ; elle est effacée quand tu te déconnectes ou désactives l’option.</li>
       <li><strong>Sessions de connexion</strong> : 30 jours maximum, ou jusqu’à la déconnexion.</li>
       <li><strong>Liens envoyés par email</strong> (confirmation, réinitialisation, suppression du compte) : valables 1 heure, puis inutilisables.</li>
       <li><strong>Compteurs anti-abus</strong> : quelques minutes à une heure.</li>

@@ -65,6 +65,12 @@ nommés comme leur slot (`body`, `pot`…). Nouvelle version d'un modèle = nouv
   de 10 cm et A*), s'assoit sur les sièges (ancre `seat`), tape au clavier s'il est face à un bureau, regarde
   plantes, déco et posters, et salue la caméra. Dans l'éditeur il reste sur place ; l'interrupteur
   « Mon avatar » du panneau Pièce le masque pour ce setup (`scene.avatar.enabled`). Il n'apparaît pas dans les aperçus PNG.
+- **Présence en ligne** : dans le viewer et l'intégration, l'avatar n'apparaît que si l'auteur a activé
+  « Apparaître dans mes setups quand je suis en ligne » (`/settings#avatar`, `user.show_presence`, désactivé par défaut)
+  et qu'il a un onglet ouvert sur le site. Chaque onglet connecté et visible envoie `POST /api/presence` toutes les 45 s
+  (`app/plugins/presence.client.ts`) ; le serveur n'écrit `user.last_seen_at` que si l'option est active, au plus une fois
+  par 30 s. En ligne = dernier battement de moins de 90 s. Les visiteurs lisent `GET /api/presence/:username`
+  (sans cache, toutes les 30 s, `useAuthorPresence`) ; la déconnexion appelle `DELETE /api/presence`.
 - **Likes** : `POST` / `DELETE /api/setups/:id/like` (setups publics, connexion requise, idempotent).
   `setup.like_count` est recalculé dans la même transaction et sert au tri « Populaires ».
 - **Cache** : galerie, profils et viewer renvoient la même réponse à tout le monde (cache CDN) ;

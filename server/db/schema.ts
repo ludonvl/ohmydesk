@@ -31,6 +31,10 @@ export const user = pgTable('user', {
   bio: text('bio').notNull().default(''),
   /** Avatar 3D (figurine) repris dans tous les setups de la personne ; null = pas encore créé. */
   avatar3d: jsonb('avatar_3d').$type<Avatar>(),
+  /** Présence en ligne publique (avatar visible dans ses setups quand la personne est sur le site). Désactivée par défaut. */
+  showPresence: boolean('show_presence').notNull().default(false),
+  /** Dernier signe de vie d'un onglet ouvert ; renseigné seulement si `showPresence`, effacé à la déconnexion. */
+  lastSeenAt: timestamp('last_seen_at', { withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 })

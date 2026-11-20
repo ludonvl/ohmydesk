@@ -7,7 +7,7 @@ import { AVATAR_AXES, AVATAR_COLOR_LABELS, avatarColorSlots, defaultAvatar, HAIR
 import type { OwnProfile } from '#shared/types/social'
 
 /** Section « Avatar » des paramètres : figurine 3D reprise dans tous les setups de la personne. */
-const props = defineProps<{ avatar: Avatar | null }>()
+const props = defineProps<{ avatar: Avatar | null; showPresence: boolean }>()
 const emit = defineEmits<{ saved: [profile: OwnProfile] }>()
 
 const clone = (a: Avatar): Avatar => JSON.parse(JSON.stringify(a))
@@ -63,6 +63,26 @@ async function save() {
   }
 }
 
+/* Présence publique : enregistrée dès le clic. */
+const presence = ref(props.showPresence)
+watch(() => props.showPresence, (v) => (presence.value = v))
+const presenceSaving = ref(false)
+const presenceError = ref('')
+async function togglePresence() {
+  const next = !presence.value
+  presence.value = next
+  presenceError.value = ''
+  presenceSaving.value = true
+  try {
+    emit('saved', await $fetch<OwnProfile>('/api/profile/presence', { method: 'PUT', body: { showPresence: next } }))
+  } catch {
+    presence.value = !next
+    presenceError.value = 'Le réglage n’a pas pu être enregistré. Réessaie.'
+  } finally {
+    presenceSaving.value = false
+  }
+}
+
 function reset() {
   draft.value = saved.value ? JSON.parse(saved.value) : defaultAvatar()
 }
@@ -76,6 +96,31 @@ function reset() {
         Ta figurine 3D. Elle est la même dans tous tes setups.
       </p>
     </div>
+
+    <div class="flex items-start justify-between gap-4 rounded-2xl bg-[#f7f4ef] px-4 py-3.5">
+      <div class="flex flex-col gap-0.5">
+        <span id="presence-label" class="text-[15px] font-semibold">Apparaître dans mes setups quand je suis en ligne</span>
+        <span id="presence-hint" class="text-[13px] text-muted">
+          Ton avatar se promène dans tes setups publiés tant que tu as un onglet ouvert sur Oh My Desk.
+          Les visiteurs voient ainsi que tu es en ligne.{{ saved ? '' : ' Crée d’abord ton avatar ci-dessous.' }}
+        </span>
+      </div>
+      <button
+        type="button"
+        role="switch"
+        :aria-checked="presence"
+        aria-labelledby="presence-label"
+        aria-describedby="presence-hint"
+        :aria-busy="presenceSaving"
+        :disabled="presenceSaving"
+        class="mt-0.5 flex h-7 w-12 shrink-0 rounded-full p-[3px] transition-colors disabled:opacity-60"
+        :class="presence ? 'justify-end bg-ink' : 'justify-start bg-line-strong'"
+        @click="togglePresence"
+      >
+        <span class="size-[22px] rounded-full bg-white shadow-sm" />
+      </button>
+    </div>
+    <FormNotice v-if="presenceError" kind="error">{{ presenceError }}</FormNotice>
 
     <div class="grid gap-6 md:grid-cols-[240px_1fr]">
       <div class="flex flex-col gap-2">

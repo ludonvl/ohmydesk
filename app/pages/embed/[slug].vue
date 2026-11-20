@@ -44,6 +44,11 @@ const params = {
 
 const { data: setup, error } = await useFetch<SetupWithScene>(() => `/api/public/setups/${slug.value}`)
 
+// L'avatar de l'auteur n'apparaît que lorsqu'il est en ligne sur le site (et si le site hôte ne l'a pas masqué).
+const { online: authorOnline } = useAuthorPresence(() =>
+  params.avatar && setup.value?.authorAvatar && setup.value.scene.avatar?.enabled !== false ? setup.value.authorUsername : null,
+)
+
 const scene = computed(() => {
   if (!setup.value) return null
   if (params.angle === undefined) return setup.value.scene
@@ -90,7 +95,7 @@ useHead({ title: () => (setup.value ? `${setup.value.name} · Oh My Desk` : 'Oh 
           :scene="scene"
           :selected-id="highlighted"
           :options="options"
-          :avatar="params.avatar ? setup.authorAvatar : null"
+          :avatar="authorOnline ? setup.authorAvatar : null"
           :label="`Setup ${setup.name} en 3D`"
           @ready="send({ type: 'ready', slug })"
           @object-click="onObjectClick"

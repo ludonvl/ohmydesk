@@ -118,8 +118,8 @@ export async function ensureUsername(userId: string, name: string): Promise<stri
 
 export async function getOwnProfile(userId: string, name: string): Promise<OwnProfile> {
   const username = await ensureUsername(userId, name)
-  const [row] = await useDb().select({ name: user.name, bio: user.bio, avatar: user.avatar3d }).from(user).where(eq(user.id, userId)).limit(1)
-  return { name: row?.name ?? name, username, bio: row?.bio ?? '', avatar: parseAvatar(row?.avatar) }
+  const [row] = await useDb().select({ name: user.name, bio: user.bio, avatar: user.avatar3d, showPresence: user.showPresence }).from(user).where(eq(user.id, userId)).limit(1)
+  return { name: row?.name ?? name, username, bio: row?.bio ?? '', avatar: parseAvatar(row?.avatar), showPresence: row?.showPresence ?? false }
 }
 
 export async function updateOwnAvatar(userId: string, avatar: Avatar): Promise<void> {
